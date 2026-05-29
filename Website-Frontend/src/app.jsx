@@ -123,11 +123,46 @@ const MobileNav = ({ route, onRoute }) => (
 );
 
 const App = () => {
-  const [route, setRouteState] = useState(() => (window.location.hash || '#home').replace('#',''));
+  const [route, setRouteState] = useState(() => (window.location.hash || '#home').replace('#', ''));
+  const [session, setSession] = useState(undefined); // undefined = checking, null = no session
+  const [profile, setProfile] = useState(null);
+  const [couple, setCouple] = useState(null);
+
+  // Boot: check existing session, load profile + couple
+  useEffect(() => {
+    sbGetSession().then(async ({ data: { session: s } }) => {
+      if (!s) { setSession(null); return; }
+      setSession(s);
+      try {
+        const prof = await sbGetProfile(s.user.id);
+        setProfile(prof);
+        if (prof.couple_id) {
+          const cpl = await sbGetCouple(prof.couple_id);
+          setCouple(cpl);
+        }
+      } catch (e) { console.error('Boot error', e); }
+    });
+
+    const { data: { subscription } } = sbOnAuthChange(async (event, s) => {
+      if (event === 'SIGNED_OUT') { setSession(null); setProfile(null); setCouple(null); return; }
+      if (s) {
+        setSession(s);
+        try {
+          const prof = await sbGetProfile(s.user.id);
+          setProfile(prof);
+          if (prof.couple_id) {
+            const cpl = await sbGetCouple(prof.couple_id);
+            setCouple(cpl);
+          }
+        } catch (e) { console.error('Auth change error', e); }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-    setRoute = setRouteState; // patch the module-level setter
-    const onHash = () => setRouteState((window.location.hash || '#home').replace('#',''));
+    setRoute = setRouteState;
+    const onHash = () => setRouteState((window.location.hash || '#home').replace('#', ''));
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -137,9 +172,29 @@ const App = () => {
     window.location.hash = id;
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
-  // Repatch every render so closures see the latest setter
   setRoute = onRoute;
 
+  // Checking session
+  if (session === undefined) {
+    return (
+      <div className="min-h-screen bg-cream-100 flex items-center justify-center">
+        <div className="flex items-center gap-2.5">
+          <span className="relative inline-flex">
+            <span className="inline-block w-6 h-6 rounded-full bg-coral-500" />
+            <span className="inline-block w-6 h-6 rounded-full bg-lavender-500 -ml-3 mix-blend-multiply" />
+          </span>
+          <span className="font-serif-i text-[22px] text-ink-900">Between Us</span>
+        </div>
+      </div>
+    );
+  }
+
+  // No session → login screen
+  if (!session) {
+    return <AuthScreen onAuth={(s) => setSession(s)} />;
+  }
+
+  const coupleId = profile?.couple_id || null;
   const Active = (ROUTES.find(r => r.id === route) || ROUTES[0]).Page;
 
   return (
@@ -148,7 +203,7 @@ const App = () => {
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar route={route} />
         <main key={route} className="px-5 sm:px-7 lg:px-9 py-6 lg:py-9 pb-28 lg:pb-12 max-w-[1200px] w-full mx-auto page-enter">
-          <Active />
+          <Active coupleId={coupleId} profile={profile} couple={couple} />
         </main>
       </div>
       <MobileNav route={route} onRoute={onRoute} />
