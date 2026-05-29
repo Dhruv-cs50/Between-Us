@@ -91,8 +91,7 @@ const useMusicLibrary = () => {
   return [lib, update];
 };
 
-/* Spotify player card — iframe embeds are blocked on non-HTTPS origins (localhost).
-   Instead we show a styled card with a direct "Open on Spotify" link. */
+/* Spotify embed iframe — works on HTTPS (production). */
 const SpotifyEmbed = ({ trackId, playlistId, height = 152, theme = 0, className = '' }) => {
   if (!trackId && !playlistId) {
     return (
@@ -103,32 +102,17 @@ const SpotifyEmbed = ({ trackId, playlistId, height = 152, theme = 0, className 
     );
   }
   const path = trackId ? `track/${trackId}` : `playlist/${playlistId}`;
-  const spotifyUrl = `https://open.spotify.com/${path}`;
-  const isPlaylist = !!playlistId;
   return (
-    <a
-      href={spotifyUrl}
-      target="_blank"
-      rel="noreferrer"
-      className={`group flex items-center gap-4 drift-bg rounded-xl ring-1 ring-ink-900/[0.07] px-4 py-3.5 no-underline transition-all hover:ring-ink-900/[0.14] hover:shadow-soft ${className}`}
-    >
-      <div className="shrink-0 w-11 h-11 rounded-lg bg-white/50 ring-1 ring-ink-900/[0.07] flex items-center justify-center">
-        <I.Music size={19} className="text-ink-600" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-500 mb-0.5">
-          {isPlaylist ? 'playlist' : 'track'}
-        </div>
-        <div className="text-[13px] font-medium text-ink-900 leading-tight">
-          open in Spotify
-        </div>
-        <div className="text-[11.5px] text-ink-500 mt-0.5">30s preview · full track when logged in</div>
-      </div>
-      <div className="shrink-0 h-8 px-3.5 rounded-full bg-[#1DB954] text-white text-[12px] font-semibold flex items-center gap-1.5 group-hover:bg-[#1ed760] transition-colors">
-        <I.Play size={11} />
-        Open
-      </div>
-    </a>
+    <iframe
+      title="Spotify player"
+      src={`https://open.spotify.com/embed/${path}?utm_source=generator&theme=${theme}`}
+      style={{ borderRadius: 12, border: 0 }}
+      width="100%"
+      height={height}
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy"
+      className={className}
+    />
   );
 };
 
