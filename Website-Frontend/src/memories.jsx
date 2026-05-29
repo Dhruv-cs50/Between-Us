@@ -71,7 +71,7 @@ const MemoryModal = ({ m, onClose, editable, onChanged, coupleId }) => {
     }
   };
 
-  const inputCls = 'w-full h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]';
+  const inputCls = 'w-full h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]';
 
   return (
     <Modal open={!!m} onClose={onClose} maxW="max-w-2xl" padding="p-0">
@@ -105,7 +105,7 @@ const MemoryModal = ({ m, onClose, editable, onChanged, coupleId }) => {
           {editing ? (
             <>
               <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="What happened…" rows={3}
-                className="w-full px-3 py-2.5 mt-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
+                className="w-full px-3 py-2.5 mt-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {MEMORY_TAG_OPTS.map(t => (
                   <Chip key={t} size="sm" tone={form.tags.includes(t) ? 'coral' : 'cream'} selected={form.tags.includes(t)} onClick={() => toggleTag(t)}>{t}</Chip>
@@ -275,16 +275,16 @@ const AddMemoryModal = ({ open, onClose, coupleId, onAdded }) => {
       </div>
       <form onSubmit={submit} className="space-y-3">
         <input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-          placeholder="Title" className="w-full h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+          placeholder="Title" className="w-full h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
         <div className="grid grid-cols-2 gap-3">
           <input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-            className="h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+            className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
           <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
-            placeholder="Location" className="h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+            placeholder="Location" className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
         </div>
         <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
           placeholder="What happened…" rows={3}
-          className="w-full px-3 py-2.5 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
+          className="w-full px-3 py-2.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
         <div>
           <div className="text-[11px] text-ink-500 mb-1.5">Tags</div>
           <div className="flex flex-wrap gap-1.5">
