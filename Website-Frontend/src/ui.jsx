@@ -243,6 +243,8 @@ const LiveDot = ({ tone = 'sage' }) => (
 );
 
 /* ─────────────────────────── Modal ─────────────────────────── */
+/* Rendered via portal into document.body so CSS transforms on ancestors
+   (from fade-up / page-enter animations) don't trap the fixed overlay. */
 const Modal = ({ open, onClose, children, maxW = 'max-w-lg', padding = 'p-6 sm:p-8' }) => {
   useEffect(() => {
     if (!open) return;
@@ -252,7 +254,7 @@ const Modal = ({ open, onClose, children, maxW = 'max-w-lg', padding = 'p-6 sm:p
     return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = ''; };
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-ink-900/35 backdrop-blur-[2px]" onClick={onClose} />
       <div className={`relative w-full ${maxW} mx-auto fade-up`}>
@@ -260,7 +262,8 @@ const Modal = ({ open, onClose, children, maxW = 'max-w-lg', padding = 'p-6 sm:p
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
