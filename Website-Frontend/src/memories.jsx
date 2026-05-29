@@ -422,4 +422,4 @@ const MemoriesTimeline = ({ coupleId }) => {
   );
 };
 
-window.MemoriesTimeline = MemoriesTimeline;
+Object.assign(window, { MemoriesTimeline, AddMemoryModal });

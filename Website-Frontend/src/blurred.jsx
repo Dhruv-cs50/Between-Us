@@ -1,6 +1,7 @@
 /* Guess the Blurred Photo — multi-round, hints reduce blur, reveal animation. */
 
-const BlurredPhotoGame = () => {
+const BlurredPhotoGame = ({ coupleId }) => {
+  const AddMemoryModal = window.AddMemoryModal; // shared from memories.jsx (loads in same session)
   const [roundIdx, setRound] = useState(0);
   const [picked, setPicked]  = useState(null);
   const [hintsUsed, setHints] = useState(0);
@@ -187,32 +188,16 @@ const BlurredPhotoGame = () => {
         </div>
       </div>
 
-      {/* Add photo memory modal */}
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} maxW="max-w-lg">
-        <div className="flex items-start justify-between mb-5 gap-4">
-          <div>
-            <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Add photo memory (mock)</div>
-            <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">A new mystery for next round</div>
-          </div>
-          <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
-        </div>
-        <div className="space-y-3">
-          <input placeholder="Title (e.g. The rooftop call)" className="w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]" />
-          <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Date" className="h-11 px-3.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]" />
-            <input placeholder="Location" className="h-11 px-3.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]" />
-          </div>
-          <textarea placeholder="A short note about this memory…" rows={3} className="w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none" />
-          <div className="rounded-xl border-2 border-dashed border-ink-900/15 px-4 py-5 text-center">
-            <div className="font-mono text-[11px] uppercase tracking-wider text-ink-500">drop photo here</div>
-            <div className="text-[12px] text-ink-400 mt-1">we’ll blur it for you</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 mt-5">
-          <Button kind="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
-          <Button kind="primary" icon={I.Plus} onClick={() => setShowAdd(false)}>Save memory</Button>
-        </div>
-      </Modal>
+      {/* Add a real photo memory — reuses the wired AddMemoryModal (PhotoPicker
+          tap-to-pick from gallery + Supabase save). */}
+      {AddMemoryModal && (
+        <AddMemoryModal
+          open={showAdd}
+          onClose={() => setShowAdd(false)}
+          coupleId={coupleId}
+          onAdded={() => setShowAdd(false)}
+        />
+      )}
     </div>
   );
 };

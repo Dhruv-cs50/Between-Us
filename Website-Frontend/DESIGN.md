@@ -157,7 +157,7 @@ Dashboard, no hero. Sections, top to bottom:
 **Layout:** Page fits the viewport without scrolling. Outer container uses `height: calc(100vh - 260px); overflow: hidden`. Grid is `flex-1 min-h-0` inside a flex-col. Canvas wrapper is `flex-1 min-h-0` inside a flex-col Surface. `setupCanvas` uses `rect.height` when the wrapper has CSS height (flex-stretched), falling back to `width * 0.6` aspect ratio otherwise. `requestAnimationFrame` defers the initial setup so flex layout settles first. Side panel (`min-h-0; overflow-y-auto`) scrolls internally so Twist Prompts never pushes the page taller.
 
 ### Blurred Photo (`blurred.jsx`)
-"Guess the Blurred Photo." 4 challenges (`PHOTO_CHALLENGES`), each a gradient `PhotoBlock` (blurred), with `hint`, multiple-choice `options`, `correct`, and a tender `note` revealed after.
+"Guess the Blurred Photo." 4 challenges (`PHOTO_CHALLENGES`), each a gradient `PhotoBlock` (blurred), with `hint`, multiple-choice `options`, `correct`, and a tender `note` revealed after. The **"Add photo memory"** button reuses the wired `AddMemoryModal` (exported to `window` from `memories.jsx`) — real photo upload via `PhotoPicker` + Supabase save. (The old mock drop-zone modal was removed.) The rounds themselves still use static `PHOTO_CHALLENGES`; sourcing rounds from real memories is future work.
 
 ### Date Night (`dates.jsx`)
 Spinner wheel across 7 categories: **Talk, Game, Create, Food, Music, Memory, Future**. 10 ideas (`DATE_IDEAS`) with duration/mood/materials/steps. A saved list (`SAVED_DATES`).
