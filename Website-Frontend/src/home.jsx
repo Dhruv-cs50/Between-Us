@@ -94,7 +94,7 @@ const CountdownCard = () => {
     <Surface className="p-6 sm:p-7 relative overflow-hidden">
       {/* Soft warm glow */}
       <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full opacity-[0.45] pointer-events-none"
-      style={{ background: 'radial-gradient(closest-side, #F7DFD2, transparent 70%)' }} />
+      style={{ background: "radial-gradient(closest-side, #F7DFD2, transparent 70%)" }} />
       <div className="relative">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -145,7 +145,7 @@ const TonightDateCard = ({ onStart }) => {
   return (
   <Surface className="p-5 relative overflow-hidden">
     <div className="absolute -right-16 -bottom-16 w-48 h-48 rounded-full opacity-[0.35] pointer-events-none"
-      style={{ background: ‘radial-gradient(closest-side, #DCE7DD, transparent 70%)’ }} />
+      style={{ background: "radial-gradient(closest-side, #DCE7DD, transparent 70%)" }} />
     <div className="relative">
       <div className="flex items-center justify-between gap-3">
         <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Tonight’s tiny date</div>
