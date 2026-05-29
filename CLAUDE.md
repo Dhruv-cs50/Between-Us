@@ -74,7 +74,10 @@ Each Babel script has its own scope. Export to `window` via `Object.assign(windo
 3. Add to `ROUTES` in `app.jsx` using `Page: (p) => <YourComponent {...p} />` pattern
 
 ### Props every page receives
-`app.jsx` passes `{ coupleId, profile, couple }` to every page via the `ROUTES` spread pattern. Use `coupleId` for all Supabase queries.
+`app.jsx` passes `{ coupleId, profile, couple, me }` to every page via the `ROUTES` spread pattern. Use `coupleId` for all Supabase queries.
+
+### Per-user identity (`me`)
+`app.jsx` computes `me = identityFor({ email: session.user.email, role: profile.role })` (helper in `data.jsx`) and passes it to every page. Detection is by **email** — anything containing "anjali" → Anjali, "dhruv" → Dhruv, else `profile.role`, else Dhruv (partner_a). Robust to gmail vs between.us domains. `me` = `{ key, name, accent, partnerKey, partnerName, partnerAccent }` where accent is `coral` (Dhruv) / `lavender` (Anjali). Use `me` for greeting, accent leads, and authorship defaults. `WELCOME_NOTES[me.key]` (in `data.jsx`) is the private per-person line on Home — edit the text there.
 
 ### Supabase helpers (all in `supabase.jsx`, all on `window`)
 - Auth: `sbSignIn`, `sbSignOut`, `sbGetSession`, `sbOnAuthChange`
@@ -170,6 +173,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Mobile PWA (add to home screen)
 
 ### Resolved this session (2026-05-29 cont.)
+- **Per-user personalization (`me`)**: app detects Dhruv vs Anjali by email (`identityFor` in `data.jsx`) and threads `me` to every page. Home greeting reorders + underlines the signed-in person's name in their accent (added `.underline-scribble-lavender`); "Send I miss you" button + welcome scribble use `me.accent` (coral/lavender); a private `WELCOME_NOTES[me.key]` line shows under the greeting; mood row tags the signed-in person "(you)"; new-letter recipient defaults to `me.partnerName` so the author defaults to whoever is writing. Anjali's login email for testing: anjalisharma6302@gmail.com.
 - ~~Letters/Bucket read-only~~: `LetterModal` and `BucketModal` now support edit + delete for DB-backed rows (`sbDeleteLetter`, `sbUpdateBucketItem`, `sbDeleteBucketItem` added). Letters: pencil on each saved envelope opens straight into edit mode (`startEditing`) — only way to manage a *sealed* letter. Bucket: one modal handles add + edit (state `undefined`/`null`/object); local `upsertItem`/`removeItem` keep the list in sync.
 - ~~"Both online" was hardcoded~~: **real-time presence**. `App` joins Supabase Realtime Presence channel `presence:{coupleId}` keyed by auth id; `partnerOnline = presentIds.some(id => id !== myUserId)`. TopBar shows pulsing sage "both online" or grey "{partner} offline" (dot visible on mobile, label `sm+`); Sidebar card mirrors it. Helpers `sbJoinPresence`/`sbLeavePresence`. No DB tables — default Realtime config.
 - **Memory photo (re)upload**: `MemoryModal` edit form has a file input; on save uploads via `sbUploadPhoto` → `img_path`. All memory `PhotoBlock`s pass `imgPath` so real photos render.

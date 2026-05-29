@@ -50,7 +50,7 @@ const useCountdown = (iso) => {
 };
 
 /* — Mood check-in for both partners — */
-const MoodCheckIn = ({ coupleId }) => {
+const MoodCheckIn = ({ coupleId, me }) => {
   const [moods, setMoods] = useState({
     dhruv:  { mood: 'happy', checked_at: null },
     anjali: { mood: 'quiet', checked_at: null },
@@ -99,7 +99,7 @@ const MoodCheckIn = ({ coupleId }) => {
     </div>
   );
 
-  const Row = ({ who, name, tone }) => {
+  const Row = ({ who, name, tone, isMe }) => {
     const current = moods[who];
     const moodObj = MOODS.find(m => m.id === current.mood);
     const ts = relTime(current.checked_at);
@@ -108,7 +108,7 @@ const MoodCheckIn = ({ coupleId }) => {
         <div className="flex items-center gap-2.5 mb-2">
           <Avatar initial={name[0]} tone={tone} size={26} />
           <span className="text-[13px] text-ink-700">
-            <span className="font-medium text-ink-900">{name}</span> is feeling
+            <span className="font-medium text-ink-900">{name}</span>{isMe && <span className="text-ink-400 text-[11px]"> (you)</span>} is feeling
           </span>
           <span className="ml-auto flex items-center gap-1.5 text-[12px]">
             {saved[who] ? (
@@ -150,9 +150,9 @@ const MoodCheckIn = ({ coupleId }) => {
       </div>
       {loading ? <MoodSkeleton /> : (
         <div className="space-y-4">
-          <Row who="dhruv" name="Dhruv" tone="coral" />
+          <Row who="dhruv" name="Dhruv" tone="coral" isMe={me?.key === 'dhruv'} />
           <Hair />
-          <Row who="anjali" name="Anjali" tone="lavender" />
+          <Row who="anjali" name="Anjali" tone="lavender" isMe={me?.key === 'anjali'} />
         </div>
       )}
     </Surface>
@@ -422,21 +422,22 @@ const ActivityHistory = ({ coupleId }) => {
 
 
 /* — Miss-you pulse button — */
-const MissYouButton = () => {
+const MissYouButton = ({ partnerName = 'they', accent = 'coral' }) => {
   const [sent, setSent] = useState(false);
+  const bg = accent === 'lavender' ? 'bg-lavender-500 hover:bg-lavender-600' : 'bg-coral-500 hover:bg-coral-600';
   return (
     <button
       onClick={() => {setSent(true);setTimeout(() => setSent(false), 2200);}}
-      className="group inline-flex items-center gap-2 px-3.5 h-10 rounded-full bg-coral-500 text-white text-sm font-medium hover:bg-coral-600 shadow-softer transition-all">
-      
+      className={`group inline-flex items-center gap-2 px-3.5 h-10 rounded-full ${bg} text-white text-sm font-medium shadow-softer transition-all`}>
+
       <I.Heart size={15} className="group-hover:scale-110 transition-transform" />
-      <span>{sent ? 'Sent · she’ll see it' : 'Send I miss you'}</span>
+      <span>{sent ? `Sent · ${partnerName} will see it` : 'Send I miss you'}</span>
     </button>);
 
 };
 
 /* — The whole Home page — */
-const HomeDashboard = ({ go, coupleId, couple }) => {
+const HomeDashboard = ({ go, coupleId, couple, me }) => {
   const [nextVisitOverride, setNextVisitOverride] = useState(null);
 
   const handleDateUpdate = async (date) => {
@@ -447,6 +448,11 @@ const HomeDashboard = ({ go, coupleId, couple }) => {
 
   const nextVisit = nextVisitOverride ?? couple?.next_visit ?? COUPLE.next_visit;
   const anniversary = couple?.anniversary || COUPLE.anniversary;
+
+  const meName = me?.name || 'Dhruv';
+  const partnerName = me?.partnerName || 'Anjali';
+  const ulClass = me?.accent === 'lavender' ? 'underline-scribble-lavender' : 'underline-scribble';
+  const welcomeNote = WELCOME_NOTES[me?.key] || null;
 
   return (
     <div className="space-y-7 fade-up">
@@ -459,14 +465,20 @@ const HomeDashboard = ({ go, coupleId, couple }) => {
             <span>Our little place between the miles</span>
           </div>
           <h1 className="font-serif-i text-[44px] sm:text-[56px] text-ink-900 leading-[1] tracking-tight">
-            Hi Dhruv <span className="text-ink-400">&</span> <span className="underline-scribble">Anjali</span>
+            Hi <span className={ulClass}>{meName}</span> <span className="text-ink-400">&</span> {partnerName}
           </h1>
-          <p className="text-ink-500 mt-2.5 text-[15px] max-w-md">
-            Two cities, one calendar. Here’s what’s ours for today.
-          </p>
+          {welcomeNote ? (
+            <p className="text-ink-600 mt-2.5 text-[15px] max-w-md italic inline-flex items-start gap-1.5">
+              <I.Heart size={14} className="text-coral-400 mt-1 shrink-0" /> {welcomeNote}
+            </p>
+          ) : (
+            <p className="text-ink-500 mt-2.5 text-[15px] max-w-md">
+              Two cities, one calendar. Here’s what’s ours for today.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <MissYouButton />
+          <MissYouButton partnerName={partnerName} accent={me?.accent} />
         </div>
       </div>
 
@@ -482,7 +494,7 @@ const HomeDashboard = ({ go, coupleId, couple }) => {
       {/* Middle row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2"><TonightDateCard onStart={() => go('dates')} /></div>
-        <MoodCheckIn coupleId={coupleId} />
+        <MoodCheckIn coupleId={coupleId} me={me} />
       </div>
 
       {/* Activity */}

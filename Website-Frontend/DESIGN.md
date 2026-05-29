@@ -141,7 +141,7 @@ All exported to `window`. Reuse these — don't hand-roll new buttons/chips.
 
 ### Home (`home.jsx`)
 Dashboard, no hero. Sections, top to bottom:
-1. **Greeting** — "Hi Dhruv & Anjali" (Anjali gets the scribble underline) + date + a **"Send I miss you"** coral pulse button (shows "Sent · she'll see it" for 2.2s).
+1. **Greeting** — **personalized to the signed-in person** (`me` prop). Reads "Hi {me} & {partner}" with the signed-in person's name first and scribble-underlined in *their* accent (coral for Dhruv via `.underline-scribble`, lavender for Anjali via `.underline-scribble-lavender`). A private `WELCOME_NOTES[me.key]` line sits under it (a short note from the other partner). Plus date + a **"Send I miss you"** button tinted to `me.accent` (shows "Sent · {partner} will see it" for 2.2s).
 2. **Countdown card** (wide) — "Next time together." If `COUPLE.next_visit` is `null`, shows a **"soon 😉"** placeholder + "Pick a date"; otherwise a live D/H/M/S countdown. Plus "Days together" count-up (since anniversary) and "Calls this month." Below that: a thin strip with **SFO↔BLR distance (8,726 mi · always)** on the left and **days to next milestone** (2k/3k/5k/10k) on the right — fills the empty space that appeared when the right column (MusicCard + LatestMemory) is taller.
 3. **MusicCard** + **Latest memory** preview (right column).
 4. **Tonight's choices** — 4 staggered game tiles (Quiz / Future Home / Blurred / Letter).
@@ -189,6 +189,9 @@ Key exports (all on `window`):
 - `BUCKET_SECTIONS`, `BUCKET_ITEMS`, `BUCKET_STATUSES`
 
 > Data is written as if it came from a DB — stable `id`s, foreign-key-friendly shapes — so migrating to Supabase later is mechanical.
+
+### Per-partner identity (`identityFor`, `WELCOME_NOTES`)
+`data.jsx` also exports the identity layer. `identityFor({ email, role })` returns `{ key, name, accent, partnerKey, partnerName, partnerAccent }` — accent is `coral` for Dhruv, `lavender` for Anjali. Detection is email-first (substring "anjali"/"dhruv"), then `profile.role`, then default Dhruv. `app.jsx` computes `me` once and passes it to every page. `WELCOME_NOTES = { anjali, dhruv }` holds the private per-person Home line (plain text, edit freely). Used by: Home greeting/accent/note + "I miss you" button, mood "(you)" tag, and the new-letter recipient default (recipient → `me.partnerName`, so author derives as the signed-in person).
 
 ---
 

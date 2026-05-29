@@ -211,21 +211,19 @@ const App = () => {
   const coupleId = profile?.couple_id || null;
   const Active = (ROUTES.find(r => r.id === route) || ROUTES[0]).Page;
 
-  // Presence → names. Partner is "online" if any present id isn't mine.
+  // Who is signed in (Dhruv vs Anjali) — drives greeting, accents, defaults.
+  const me = identityFor({ email: session?.user?.email, role: profile?.role });
+  // Presence → partner is "online" if any present id isn't mine.
   const myUserId = session?.user?.id;
   const partnerOnline = presentIds.some(id => id !== myUserId);
-  const names = [COUPLE.partner_a.name, COUPLE.partner_b.name];
-  const roleName = profile?.role && names.find(n => n.toLowerCase() === String(profile.role).toLowerCase());
-  const myName = profile?.display_name || profile?.name || roleName || names[0];
-  const partnerName = names.find(n => n !== myName) || names[1];
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar route={route} onRoute={onRoute} online={partnerOnline} partnerName={partnerName} />
+      <Sidebar route={route} onRoute={onRoute} online={partnerOnline} partnerName={me.partnerName} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar route={route} online={partnerOnline} partnerName={partnerName} />
+        <TopBar route={route} online={partnerOnline} partnerName={me.partnerName} />
         <main key={route} className="px-5 sm:px-7 lg:px-9 py-6 lg:py-9 pb-28 lg:pb-12 max-w-[1200px] w-full mx-auto page-enter">
-          <Active coupleId={coupleId} profile={profile} couple={couple} />
+          <Active coupleId={coupleId} profile={profile} couple={couple} me={me} />
         </main>
       </div>
       <MobileNav route={route} onRoute={onRoute} />

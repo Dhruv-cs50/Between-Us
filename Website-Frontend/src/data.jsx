@@ -327,8 +327,41 @@ const BUCKET_ITEMS = [
 
 const BUCKET_STATUSES = ['Dreaming', 'Planned', 'Done'];
 
+// ── Per-partner identity ──────────────────────────────────────────────
+// Detect who is signed in from their auth email. Robust to domain: both of
+// Anjali's emails contain "anjali", Dhruv's contain "dhruv". Falls back to a
+// profile.role match, else Dhruv (partner_a).
+const PARTNER_META = {
+  dhruv:  { key: 'dhruv',  name: 'Dhruv',  accent: 'coral',    partner: 'anjali' },
+  anjali: { key: 'anjali', name: 'Anjali', accent: 'lavender', partner: 'dhruv'  },
+};
+
+const partnerKey = ({ email, role } = {}) => {
+  if (email && /anjali/i.test(email)) return 'anjali';
+  if (email && /dhruv/i.test(email)) return 'dhruv';
+  if (role && PARTNER_META[String(role).toLowerCase()]) return String(role).toLowerCase();
+  return 'dhruv';
+};
+
+// Returns { key, name, accent, partnerKey, partnerName, partnerAccent }
+const identityFor = (opts) => {
+  const me = PARTNER_META[partnerKey(opts)];
+  const partner = PARTNER_META[me.partner];
+  return {
+    key: me.key, name: me.name, accent: me.accent,
+    partnerKey: partner.key, partnerName: partner.name, partnerAccent: partner.accent,
+  };
+};
+
+// A short private line shown only to the signed-in partner on Home. Edit freely.
+const WELCOME_NOTES = {
+  anjali: "go easy on yourself today — I've got you, even from here. — D",
+  dhruv:  "whatever today looks like, it's still you and me. — A",
+};
+
 Object.assign(window, {
   COUPLE, QUIZ_QUESTIONS, QUIZ_CATEGORIES,
+  PARTNER_META, partnerKey, identityFor, WELCOME_NOTES,
   DRAW_TWISTS, DRAW_RATINGS,
   PHOTO_CHALLENGES, ACTIVITY, LATEST_MEMORY, TONIGHT_DATE, SOUNDTRACK,
   MOODS,

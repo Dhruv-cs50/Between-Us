@@ -186,10 +186,13 @@ const LetterModal = ({ letter, onClose, editable, onChanged, startEditing, coupl
   );
 };
 
-const AddLetterModal = ({ open, onClose, coupleId, onAdd }) => {
+const AddLetterModal = ({ open, onClose, coupleId, onAdd, me }) => {
+  // Default the recipient to the signed-in person's partner, so the author
+  // (derived as the non-recipient) defaults to whoever is writing.
+  const defaultRecipient = me?.partnerName || COUPLE.partner_b.name;
   const [category, setCategory] = useState(LETTER_CATEGORIES[0]);
   const [body, setBody] = useState('');
-  const [recipient, setRecipient] = useState(COUPLE.partner_b.name);
+  const [recipient, setRecipient] = useState(defaultRecipient);
   const [sealed, setSealed] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -197,10 +200,10 @@ const AddLetterModal = ({ open, onClose, coupleId, onAdd }) => {
     if (!open) {
       setCategory(LETTER_CATEGORIES[0]);
       setBody('');
-      setRecipient(COUPLE.partner_b.name);
+      setRecipient(defaultRecipient);
       setSealed(true);
     }
-  }, [open]);
+  }, [open, defaultRecipient]);
 
   const save = async () => {
     if (!body.trim()) return;
@@ -279,7 +282,7 @@ const AddLetterModal = ({ open, onClose, coupleId, onAdd }) => {
   );
 };
 
-const LettersPage = ({ coupleId }) => {
+const LettersPage = ({ coupleId, me }) => {
   const [letters, setLetters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reading, setReading] = useState(null);
@@ -348,7 +351,7 @@ const LettersPage = ({ coupleId }) => {
         startEditing={editStart}
         coupleId={coupleId}
       />
-      <AddLetterModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdd={handleAdd} />
+      <AddLetterModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdd={handleAdd} me={me} />
     </div>
   );
 };
