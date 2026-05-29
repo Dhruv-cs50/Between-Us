@@ -67,7 +67,7 @@ const sbFetchMemories = async (coupleId) => {
     .from('memories')
     .select('*')
     .eq('couple_id', coupleId)
-    .order('date', { ascending: false });
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
 };

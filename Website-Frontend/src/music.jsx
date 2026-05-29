@@ -91,28 +91,38 @@ const useMusicLibrary = () => {
   return [lib, update];
 };
 
-/* Spotify embed iframe — works on HTTPS (production). */
+/* Spotify embed iframe + fallback link below for when iframe fails or user not logged in. */
 const SpotifyEmbed = ({ trackId, playlistId, height = 152, theme = 0, className = '' }) => {
   if (!trackId && !playlistId) {
     return (
       <div className={`rounded-xl ring-1 ring-ink-900/[0.07] bg-cream-200 px-3.5 py-3 flex items-center gap-2.5 text-[12px] text-ink-500 ${className}`}>
         <I.Music size={14} className="text-ink-400" />
-        <span className="font-mono">no track linked yet — paste a Spotify link to play.</span>
+        <span className="font-mono">no track linked yet — paste a Spotify link below.</span>
       </div>
     );
   }
   const path = trackId ? `track/${trackId}` : `playlist/${playlistId}`;
+  const spotifyUrl = `https://open.spotify.com/${path}`;
   return (
-    <iframe
-      title="Spotify player"
-      src={`https://open.spotify.com/embed/${path}?utm_source=generator&theme=${theme}`}
-      style={{ borderRadius: 12, border: 0 }}
-      width="100%"
-      height={height}
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-      className={className}
-    />
+    <div className={className}>
+      <iframe
+        title="Spotify player"
+        src={`https://open.spotify.com/embed/${path}?utm_source=generator&theme=${theme}`}
+        style={{ borderRadius: 12, border: 0 }}
+        width="100%"
+        height={height}
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"
+      />
+      <a
+        href={spotifyUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-flex items-center gap-1.5 text-[11.5px] text-ink-500 hover:text-ink-800 font-mono"
+      >
+        <I.Music size={11} /> open directly in Spotify
+      </a>
+    </div>
   );
 };
 
