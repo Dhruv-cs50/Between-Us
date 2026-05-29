@@ -164,7 +164,7 @@ Spinner wheel across 7 categories: **Talk, Game, Create, Food, Music, Memory, Fu
 "Open When" letters. 8 categories (`LETTER_CATEGORIES`). Each letter: author/recipient, `written` date, `locked` boolean (sealed letters show `(sealed)`), and a `tone` color. Bodies are multi-paragraph, intimate. **"Write a letter" modal is fully wired** — single-select category chips, body textarea, recipient select (the two partners), and a sealed/open select. Author is derived as the partner who is *not* the recipient; `tone` follows the author's accent (Dhruv→coral, Anjali→lavender); `written` is today's display date. Saves via `sbAddLetter`, optimistic prepend via `onAdd`. (Note: "seal until a specific date" was dropped — there is no `unlock_date` column or scheduled-unlock logic yet; a sealed letter unlocks only via `sbUpdateLetter({ locked: false })`.)
 
 ### Memories (`memories.jsx`)
-Tagged timeline. Tags: **Calls, Visits, Firsts, Funny, Hard Moments, Future, Music**. Each memory has date, title, location, note, optional `song`, a `bg` gradient, and a `spotify` field (null now — meant to be set via UI and persisted to localStorage). Includes a "Someday / TBD" future placeholder memory.
+Tagged timeline. Tags: **Calls, Visits, Firsts, Funny, Hard Moments, Future, Music**. Each memory has date, title, location, note, optional `song`, a `bg` gradient, and a `spotify` field (null now — meant to be set via UI and persisted to localStorage). Includes a "Someday / TBD" future placeholder memory. **`MemoryModal` supports inline edit + delete** when the memory came from the DB (`editable` prop = `memories.length > 0`; static fallback memories are read-only since they have no DB row). Pencil icon by the close button flips the text column into an edit form (title / date / location / note / tag chips); **Save** calls `sbUpdateMemory` then mutates `m` in place; **Delete** confirms via `window.confirm` then calls `sbDeleteMemory`. Both fire `onChanged` → `reload()`, which preserves the current featured memory if it still exists else picks the newest.
 
 ### Bucket List (`bucket.jsx`)
 6 sections: **Places to go, Food to try, Little rituals, Future home, Songs to share, Silly goals**. Each item: title, `addedBy` (Dhruv/Anjali/Both), `status` (**Dreaming → Planned → Done**), note. **"Add to list" modal is fully wired** — controlled title/section/note/status inputs, saves via `sbAddBucketItem`, optimistic UI update via `onAdd` callback. Cycle-status button calls `sbUpdateBucketStatus` live.
@@ -275,7 +275,7 @@ Policies: `using (couple_id = my_couple_id())` for reads, `with check` for write
 ### To improve
 - [ ] Spotify track IDs in `data.jsx` are placeholder guesses — paste real links via Edit Library modal
 - [ ] `next_visit` is null — update in Supabase `couples` table when a date is set
-- [ ] Memory modal is read-only after creation — no edit/delete UI yet
+- [x] ~~Memory modal is read-only after creation~~ — inline edit + delete wired (2026-05-29). `sbDeleteMemory` added; `MemoryModal` is editable for DB-backed memories
 - [ ] Blurred Photo game uses static gradient placeholders — needs real seeded photos
 
 ### Future features

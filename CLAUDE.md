@@ -79,7 +79,7 @@ Each Babel script has its own scope. Export to `window` via `Object.assign(windo
 ### Supabase helpers (all in `supabase.jsx`, all on `window`)
 - Auth: `sbSignIn`, `sbSignOut`, `sbGetSession`, `sbOnAuthChange`
 - Couple: `sbGetProfile`, `sbGetCouple`, `sbLinkPartner`, `sbUpdateNextVisit`
-- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbFetchLetters`, `sbAddLetter`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
+- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbDeleteMemory`, `sbFetchLetters`, `sbAddLetter`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
 - Storage: `sbUploadPhoto`, `sbGetPhotoUrl`
 
 ### Modal — ALWAYS use `ReactDOM.createPortal`
@@ -165,10 +165,11 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Email reminders for date night
 - Spotify OAuth so the music card works without manual link pasting
 - Anjali being able to write and seal her own letters through the UI
-- Add/edit memories from the memory modal (currently read-only after creation)
+- ~~Add/edit memories from the memory modal~~ — DONE (2026-05-29). Inline edit + delete in `MemoryModal` for DB-backed memories via `sbUpdateMemory` / `sbDeleteMemory`. Photo re-upload from the edit form still TBD.
 - Mobile PWA (add to home screen)
 
 ### Resolved this session (2026-05-29 cont.)
+- ~~Memory modal read-only~~: `MemoryModal` now has inline edit + delete for DB-backed memories. Pencil flips the text column to an edit form (title/date/location/note/tags); Save → `sbUpdateMemory` + in-place mutate; Delete → `window.confirm` → `sbDeleteMemory`. Both call `onChanged` → `reload()`. Added `sbDeleteMemory` helper. `reload` now preserves featured memory by id (or picks newest). Static fallback memories stay read-only (`editable` gated on `memories.length > 0`). All 15 `src/*.jsx` transpile clean; app boots 0 console errors.
 - ~~Home page blank / crash~~: 3 curly-quote string delimiters in `home.jsx` `CountdownCard` (`useState(‘’)`, `toLocaleDateString(‘en-US’…)`, `setDateInput(‘’)`) threw a Babel SyntaxError. Replaced with straight quotes. All 15 `src/*.jsx` now transpile clean; app loads with 0 console errors.
 
 ### Resolved this session (2026-05-29)

@@ -1,10 +1,25 @@
 /* Memories timeline — chronological, filters, featured + random pick. */
 
 /* Memory modal — photo, note, and a Spotify embed for the linked song.
-   If no spotify ID yet, surfaces a paste-link affordance. */
-const MemoryModal = ({ m, onClose }) => {
+   If no spotify ID yet, surfaces a paste-link affordance.
+   When `editable` (memory came from the DB), supports inline edit + delete. */
+const MEMORY_TAG_OPTS = ['Calls', 'Visits', 'Firsts', 'Funny', 'Hard Moments', 'Future', 'Music'];
+const tagTone = (t) => t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream';
+
+const MemoryModal = ({ m, onClose, editable, onChanged }) => {
   const [linking, setLinking] = useState(false);
   const [override, setOverride] = useState({}); // memId -> trackId during this session
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ title: '', date: '', location: '', note: '', tags: [] });
+
+  // Sync edit form whenever a different memory opens; reset edit mode.
+  useEffect(() => {
+    if (m) setForm({ title: m.title || '', date: m.date || '', location: m.location || '', note: m.note || '', tags: m.tags || [] });
+    setEditing(false);
+    setLinking(false);
+  }, [m]);
+
   if (!m) return null;
   const trackId = override[m.id] || m.spotify?.trackId || null;
 
@@ -14,27 +29,101 @@ const MemoryModal = ({ m, onClose }) => {
     setLinking(false);
   };
 
+  const toggleTag = (t) => setForm(f => ({
+    ...f, tags: f.tags.includes(t) ? f.tags.filter(x => x !== t) : [...f.tags, t]
+  }));
+
+  const saveEdit = async () => {
+    setBusy(true);
+    try {
+      await sbUpdateMemory(m.id, {
+        title: form.title, date: form.date, location: form.location,
+        note: form.note, tags: form.tags,
+      });
+      Object.assign(m, form);            // mutate in place so the open modal reflects edits
+      setEditing(false);
+      onChanged?.();
+    } catch (err) {
+      console.error('Update memory failed', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const del = async () => {
+    if (!window.confirm('Delete this memory? This can\'t be undone.')) return;
+    setBusy(true);
+    try {
+      await sbDeleteMemory(m.id);
+      onChanged?.();
+      onClose();
+    } catch (err) {
+      console.error('Delete memory failed', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputCls = 'w-full h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]';
+
   return (
     <Modal open={!!m} onClose={onClose} maxW="max-w-2xl" padding="p-0">
       <div className="grid grid-cols-1 sm:grid-cols-[1.1fr,1fr]">
-        <PhotoBlock bg={m.bg} className="aspect-[5/4] sm:aspect-auto sm:h-full" caption={m.date.toLowerCase()} />
+        <PhotoBlock bg={m.bg} className="aspect-[5/4] sm:aspect-auto sm:h-full" caption={String(m.date).toLowerCase()} />
         <div className="p-6 sm:p-7 flex flex-col">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{m.date}</div>
-              <div className="font-serif-i text-3xl text-ink-900 leading-[1.05] mt-1" style={{textWrap:'pretty'}}>{m.title}</div>
-              <div className="text-[12px] text-ink-500 mt-2 inline-flex items-center gap-1.5"><I.Pin size={11} /> {m.location}</div>
+            {editing ? (
+              <div className="flex-1 space-y-2.5">
+                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Title" className={inputCls} />
+                <div className="grid grid-cols-2 gap-2.5">
+                  <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className={inputCls} />
+                  <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Location" className={inputCls} />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{m.date}</div>
+                <div className="font-serif-i text-3xl text-ink-900 leading-[1.05] mt-1" style={{textWrap:'pretty'}}>{m.title}</div>
+                <div className="text-[12px] text-ink-500 mt-2 inline-flex items-center gap-1.5"><I.Pin size={11} /> {m.location}</div>
+              </div>
+            )}
+            <div className="flex items-center gap-0.5 shrink-0">
+              {editable && !editing && (
+                <button onClick={() => setEditing(true)} title="Edit memory" className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.Pencil size={16} /></button>
+              )}
+              <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
           </div>
 
-          <p className="text-[14px] text-ink-700 mt-3 leading-relaxed" style={{textWrap:'pretty'}}>{m.note}</p>
+          {editing ? (
+            <>
+              <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="What happened…" rows={3}
+                className="w-full px-3 py-2.5 mt-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {MEMORY_TAG_OPTS.map(t => (
+                  <Chip key={t} size="sm" tone={form.tags.includes(t) ? 'coral' : 'cream'} selected={form.tags.includes(t)} onClick={() => toggleTag(t)}>{t}</Chip>
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-4">
+                <Button kind="ghost" icon={I.Trash} onClick={del} disabled={busy} className="text-coral-600">Delete</Button>
+                <div className="flex gap-2">
+                  <Button kind="ghost" type="button" onClick={() => setEditing(false)} disabled={busy}>Cancel</Button>
+                  <Button kind="primary" icon={I.Check} onClick={saveEdit} disabled={busy}>{busy ? 'saving…' : 'Save'}</Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-[14px] text-ink-700 mt-3 leading-relaxed" style={{textWrap:'pretty'}}>{m.note}</p>
 
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {(m.tags || []).map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
-          </div>
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {(m.tags || []).map(t => <Chip key={t} size="sm" tone={tagTone(t)}>{t}</Chip>)}
+              </div>
+            </>
+          )}
 
           {/* Music for this memory */}
+          {!editing && (
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2">
               <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium inline-flex items-center gap-1.5">
@@ -56,6 +145,7 @@ const MemoryModal = ({ m, onClose }) => {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
     </Modal>
@@ -218,7 +308,12 @@ const MemoriesTimeline = ({ coupleId }) => {
     if (!coupleId) { setLoading(false); return; }
     sbFetchMemories(coupleId).then(data => {
       setMemories(data);
-      if (data.length && !featured) setFeatured(data[0]);
+      // Keep current featured if it still exists; otherwise pick the newest.
+      setFeatured(prev => {
+        if (!data.length) return null;
+        const still = prev && data.find(d => d.id === prev.id);
+        return still || data[0];
+      });
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -304,7 +399,12 @@ const MemoriesTimeline = ({ coupleId }) => {
         </div>
       </Surface>
 
-      <MemoryModal m={opened} onClose={() => setOpened(null)} />
+      <MemoryModal
+        m={opened}
+        onClose={() => setOpened(null)}
+        editable={memories.length > 0}
+        onChanged={reload}
+      />
       <AddMemoryModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdded={reload} />
     </div>
   );

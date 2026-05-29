@@ -87,6 +87,11 @@ const sbUpdateMemory = async (id, fields) => {
   if (error) throw error;
 };
 
+const sbDeleteMemory = async (id) => {
+  const { error } = await _sb.from('memories').delete().eq('id', id);
+  if (error) throw error;
+};
+
 /* ── Letters ── */
 const sbFetchLetters = async (coupleId) => {
   const { data, error } = await _sb
@@ -239,7 +244,7 @@ Object.assign(window, {
   _sb,
   sbSignIn, sbSignOut, sbGetSession, sbOnAuthChange,
   sbGetProfile, sbGetCouple, sbLinkPartner, sbUpdateNextVisit,
-  sbFetchMemories, sbAddMemory, sbUpdateMemory,
+  sbFetchMemories, sbAddMemory, sbUpdateMemory, sbDeleteMemory,
   sbFetchLetters, sbAddLetter, sbUpdateLetter,
   sbFetchBucketItems, sbAddBucketItem, sbUpdateBucketStatus,
   sbFetchLatestMoods, sbUpsertMood,
