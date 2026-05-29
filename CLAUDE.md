@@ -163,6 +163,9 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - ~~Bucket list add is mock~~: AddBucketModal now saves to Supabase via `sbAddBucketItem`
 - ~~favicon.ico 404~~: SVG favicon (coral+lavender circles) added to index.html
 
+### Medium priority
+- ~~**Future Home page layout**~~ — ✅ Fixed: page now fits viewport height. Grid uses `h-[calc(100vh-260px)]`, canvas flex-fills remaining height, side panel scrolls internally.
+
 ### Nice to have / future
 - Real-time sync (Supabase subscriptions) so both see each other's mood updates live
 - Push notifications ("I miss you" button actually notifies Anjali)

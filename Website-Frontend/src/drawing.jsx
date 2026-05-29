@@ -35,7 +35,8 @@ const DrawingGame = ({ coupleId }) => {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = wrap.getBoundingClientRect();
     const w = Math.max(280, Math.floor(rect.width));
-    const h = Math.max(280, Math.floor(rect.width * 0.66));
+    // use flex-stretch height when available, fall back to 0.6 aspect ratio
+    const h = rect.height > 100 ? Math.max(280, Math.floor(rect.height)) : Math.max(280, Math.floor(rect.width * 0.6));
     if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
       // preserve current bitmap when resizing
       const prev = canvas.toDataURL();
@@ -58,10 +59,10 @@ const DrawingGame = ({ coupleId }) => {
   }, []);
 
   useEffect(() => {
-    setupCanvas();
+    const frame = requestAnimationFrame(() => setupCanvas());
     const onResize = () => setupCanvas();
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', onResize); };
   }, [setupCanvas]);
 
   /* ── timer ── */
@@ -213,7 +214,7 @@ const DrawingGame = ({ coupleId }) => {
 
   /* ── ready / playing ── */
   return (
-    <div className="space-y-6 fade-up">
+    <div className="fade-up flex flex-col gap-6" style={{ height: 'calc(100vh - 260px)', minHeight: 560 }}>
       <SectionHeader
         eyebrow="Game 02"
         title="Future Home, Badly Drawn"
@@ -225,10 +226,10 @@ const DrawingGame = ({ coupleId }) => {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-5">
-        {/* Canvas */}
-        <Surface className="p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-5 min-h-0">
+        {/* Canvas — flex column so canvas stretches to fill */}
+        <Surface className="p-4 sm:p-5 flex flex-col min-h-0">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap shrink-0">
             <div className="flex items-center gap-2">
               <Chip tone="ink" size="sm">Draw our future home</Chip>
               <Chip tone="lavender" size="sm" icon={I.Sparkle}>{twists[twists.length - 1]}</Chip>
@@ -243,10 +244,10 @@ const DrawingGame = ({ coupleId }) => {
             </div>
           </div>
 
-          <div ref={wrapRef} className="relative rounded-2xl ring-1 ring-ink-900/[0.08] bg-[#FFFDF8] overflow-hidden">
+          <div ref={wrapRef} className="flex-1 relative rounded-2xl ring-1 ring-ink-900/[0.08] bg-[#FFFDF8] overflow-hidden min-h-0" style={{ minHeight: 200 }}>
             <canvas
               ref={canvasRef}
-              className="block w-full cursor-crosshair"
+              className="block w-full h-full cursor-crosshair"
               onMouseDown={startStroke} onMouseMove={moveStroke} onMouseUp={endStroke} onMouseLeave={endStroke}
               onTouchStart={startStroke} onTouchMove={moveStroke} onTouchEnd={endStroke}
             />
@@ -267,7 +268,7 @@ const DrawingGame = ({ coupleId }) => {
           </div>
 
           {/* mobile toolbar */}
-          <div className="mt-3 flex items-center justify-between gap-3 lg:hidden">
+          <div className="mt-3 flex items-center justify-between gap-3 lg:hidden shrink-0">
             <div className="flex items-center gap-1.5">
               {PALETTE.map(c => (
                 <button key={c} onClick={() => { setColor(c); setErase(false); }}
@@ -284,8 +285,8 @@ const DrawingGame = ({ coupleId }) => {
           </div>
         </Surface>
 
-        {/* Side toolbar — desktop */}
-        <div className="space-y-4">
+        {/* Side toolbar — desktop, scrollable so it never forces page taller */}
+        <div className="space-y-4 lg:overflow-y-auto lg:pb-1">
           <Surface className="p-5 hidden lg:block">
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Tools</div>
 
