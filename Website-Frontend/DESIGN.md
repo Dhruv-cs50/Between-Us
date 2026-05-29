@@ -105,7 +105,8 @@ All exported to `window`. Reuse these — don't hand-roll new buttons/chips.
 - **`Avatar`** / **`PairAvatar`** — serif-italic initial in a tinted circle. PairAvatar overlaps D (coral) + A (lavender). The brand mark is the same two overlapping circles with `mix-blend-multiply`.
 - **`Stat`** — mono label + big serif-italic value + sub.
 - **`CountUp`** / **`useCountUp`** — eased count-up animation (easeOutCubic).
-- **`PhotoBlock`** — image placeholder: soft gradient `bg`, optional `blur`, paper-noise overlay, mono caption pill. **Photos are gradient stand-ins** — there are no real images yet; each memory/challenge carries a `bg` gradient string.
+- **`PhotoBlock`** — image placeholder: soft gradient `bg`, optional `blur`, paper-noise overlay, mono caption pill. Renders a real photo when given `imgPath` (Supabase Storage → signed URL), else the gradient.
+- **`PhotoPicker`** — `{ file, onPick, label }`. Explicit pill **tap button** ("Add a photo" / "Change photo") that triggers a *hidden* `<input type=file accept="image/*">` via a ref, plus a 48px thumbnail preview + filename. Used in both Add-memory and Memory-edit forms. The hidden-input-behind-a-button pattern is required for iOS Safari: a bare file input is a poor tap target, while a button `.click()`ing the input opens the native Photo Library / Take Photo sheet.
 - **`Hair`** — 1px divider.
 - **`LiveDot`** — pulsing "connected" indicator.
 - **`Modal`** — bottom-sheet on mobile, centered on desktop; Esc to close, scroll-locked.

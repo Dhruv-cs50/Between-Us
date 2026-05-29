@@ -222,6 +222,38 @@ const PhotoBlock = ({ bg, imgPath, caption, blur = 0, className = '', children, 
   );
 };
 
+// Photo picker — explicit tap button + thumbnail preview. A hidden file input
+// is triggered by a ref so it works as a proper tap target on iOS Safari
+// (tap → Photo Library / Take Photo / Choose File), not a tiny native control.
+const PhotoPicker = ({ file, onPick, label = 'Add a photo' }) => {
+  const ref = useRef(null);
+  const [preview, setPreview] = useState(null);
+  useEffect(() => {
+    if (!file) { setPreview(null); return; }
+    const u = URL.createObjectURL(file);
+    setPreview(u);
+    return () => URL.revokeObjectURL(u);
+  }, [file]);
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        ref={ref} type="file" accept="image/*" className="hidden"
+        onChange={(e) => onPick(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+      />
+      <button
+        type="button" onClick={() => ref.current && ref.current.click()}
+        className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-cream-200 text-ink-800 ring-1 ring-ink-900/[0.06] hover:bg-cream-300 text-[14px] font-medium active:translate-y-px transition-all"
+      >
+        <I.Photo size={16} /> {file ? 'Change photo' : label}
+      </button>
+      {preview ? (
+        <img src={preview} alt="preview" className="w-12 h-12 rounded-xl object-cover ring-1 ring-ink-900/10" />
+      ) : null}
+      {file ? <span className="text-[12px] text-ink-500 truncate max-w-[120px]">{file.name}</span> : null}
+    </div>
+  );
+};
+
 // Loading skeleton for async page data
 const PageSkeleton = ({ rows = 4 }) => (
   <div className="space-y-4 animate-pulse">
@@ -311,6 +343,6 @@ Object.assign(window, {
   I, Icon,
   Surface, Panel, SectionHeader, Button, Chip, Avatar, PairAvatar, Stat,
   CountUp, useCountUp,
-  PhotoBlock, PageSkeleton, Hair, LiveDot, Modal, SoundtrackCard,
+  PhotoBlock, PhotoPicker, PageSkeleton, Hair, LiveDot, Modal, SoundtrackCard,
   useState, useEffect, useRef, useMemo, useCallback,
 });

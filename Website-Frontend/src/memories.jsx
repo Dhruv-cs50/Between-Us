@@ -112,8 +112,8 @@ const MemoryModal = ({ m, onClose, editable, onChanged, coupleId }) => {
                 ))}
               </div>
               <div className="mt-3">
-                <div className="text-[11px] text-ink-500 mb-1.5">{m.img_path ? 'Replace photo' : 'Add a photo'} (optional)</div>
-                <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} className="text-[13px] text-ink-600" />
+                <div className="text-[11px] text-ink-500 mb-1.5">Photo (optional)</div>
+                <PhotoPicker file={file} onPick={setFile} label={m.img_path ? 'Replace photo' : 'Add a photo'} />
               </div>
               <div className="flex items-center justify-between gap-2 mt-4">
                 <Button kind="ghost" icon={I.Trash} onClick={del} disabled={busy} className="text-coral-600">Delete</Button>
@@ -296,7 +296,7 @@ const AddMemoryModal = ({ open, onClose, coupleId, onAdded }) => {
         </div>
         <div>
           <div className="text-[11px] text-ink-500 mb-1.5">Photo (optional)</div>
-          <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} className="text-[13px] text-ink-600" />
+          <PhotoPicker file={file} onPick={setFile} />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button kind="ghost" type="button" onClick={onClose}>Cancel</Button>
