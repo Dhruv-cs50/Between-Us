@@ -98,6 +98,16 @@ const sbFetchLetters = async (coupleId) => {
   return data;
 };
 
+const sbAddLetter = async (coupleId, fields) => {
+  const { data, error } = await _sb
+    .from('letters')
+    .insert({ couple_id: coupleId, ...fields })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 const sbUpdateLetter = async (id, fields) => {
   const { error } = await _sb.from('letters').update(fields).eq('id', id);
   if (error) throw error;
@@ -230,7 +240,7 @@ Object.assign(window, {
   sbSignIn, sbSignOut, sbGetSession, sbOnAuthChange,
   sbGetProfile, sbGetCouple, sbLinkPartner, sbUpdateNextVisit,
   sbFetchMemories, sbAddMemory, sbUpdateMemory,
-  sbFetchLetters, sbUpdateLetter,
+  sbFetchLetters, sbAddLetter, sbUpdateLetter,
   sbFetchBucketItems, sbAddBucketItem, sbUpdateBucketStatus,
   sbFetchLatestMoods, sbUpsertMood,
   sbFetchActivity, sbLogActivity,

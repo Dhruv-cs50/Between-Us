@@ -160,7 +160,7 @@ Dashboard, no hero. Sections, top to bottom:
 Spinner wheel across 7 categories: **Talk, Game, Create, Food, Music, Memory, Future**. 10 ideas (`DATE_IDEAS`) with duration/mood/materials/steps. A saved list (`SAVED_DATES`).
 
 ### Letters (`letters.jsx`)
-"Open When" letters. 8 categories (`LETTER_CATEGORIES`). Each letter: author/recipient, `written` date, `locked` boolean (sealed letters show `(sealed)`), and a `tone` color. Bodies are multi-paragraph, intimate.
+"Open When" letters. 8 categories (`LETTER_CATEGORIES`). Each letter: author/recipient, `written` date, `locked` boolean (sealed letters show `(sealed)`), and a `tone` color. Bodies are multi-paragraph, intimate. **"Write a letter" modal is fully wired** — single-select category chips, body textarea, recipient select (the two partners), and a sealed/open select. Author is derived as the partner who is *not* the recipient; `tone` follows the author's accent (Dhruv→coral, Anjali→lavender); `written` is today's display date. Saves via `sbAddLetter`, optimistic prepend via `onAdd`. (Note: "seal until a specific date" was dropped — there is no `unlock_date` column or scheduled-unlock logic yet; a sealed letter unlocks only via `sbUpdateLetter({ locked: false })`.)
 
 ### Memories (`memories.jsx`)
 Tagged timeline. Tags: **Calls, Visits, Firsts, Funny, Hard Moments, Future, Music**. Each memory has date, title, location, note, optional `song`, a `bg` gradient, and a `spotify` field (null now — meant to be set via UI and persisted to localStorage). Includes a "Someday / TBD" future placeholder memory.
@@ -281,6 +281,6 @@ Policies: `using (couple_id = my_couple_id())` for reads, `with check` for write
 - [ ] Real-time sync (Supabase `subscribe()`) — both see mood updates live
 - [ ] "Send I miss you" actually notifies Anjali (push notification / email)
 - [ ] Spotify OAuth so music card links automatically
-- [ ] Anjali writes letters through the UI (currently requires DB insert)
+- [x] ~~Anjali writes letters through the UI~~ — `AddLetterModal` wired to `sbAddLetter` (2026-05-29). Remaining: per-account author defaults once Anjali signs in (currently recipient drives author)
 - [ ] Mobile PWA — add to home screen with icon
 - [ ] Activity feed auto-populated from real interactions (quiz plays, moods, drawings)

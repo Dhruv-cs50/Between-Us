@@ -77,7 +77,7 @@ Each Babel script has its own scope. Export to `window` via `Object.assign(windo
 ### Supabase helpers (all in `supabase.jsx`, all on `window`)
 - Auth: `sbSignIn`, `sbSignOut`, `sbGetSession`, `sbOnAuthChange`
 - Couple: `sbGetProfile`, `sbGetCouple`, `sbLinkPartner`, `sbUpdateNextVisit`
-- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbFetchLetters`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
+- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbFetchLetters`, `sbAddLetter`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
 - Storage: `sbUploadPhoto`, `sbGetPhotoUrl`
 
 ### Modal — ALWAYS use `ReactDOM.createPortal`
@@ -155,7 +155,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 ### Medium priority
 - **Real photos** — add to memories via "Add memory" modal, or bulk upload to `photos/{couple_id}/` bucket in Supabase Storage and update `img_path` on memory rows
 - **Blurred Photo game** — still uses static photo challenge data. Could be seeded with real photos
-- **Letters write** — AddLetterModal UI exists but is not wired to Supabase. `sbAddLetter` helper not yet written.
+- ~~**Letters write**~~ — DONE (2026-05-29). `sbAddLetter` helper added; `AddLetterModal` is stateful and saves to Supabase with optimistic prepend. Author derived from recipient, tone from author accent, sealed/open toggle. "Seal until specific date" deferred (no `unlock_date` column).
 
 ### Nice to have / future
 - Real-time sync (Supabase subscriptions) so both see each other's mood updates live

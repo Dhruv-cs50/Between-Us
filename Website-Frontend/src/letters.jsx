@@ -87,41 +87,102 @@ const LetterModal = ({ letter, onClose }) => {
   );
 };
 
-const AddLetterModal = ({ open, onClose }) => (
-  <Modal open={open} onClose={onClose} maxW="max-w-lg">
-    <div className="flex items-start justify-between mb-5 gap-4">
-      <div>
-        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">New letter (mock)</div>
-        <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">Write something to come back to</div>
+// author is whichever partner is NOT the recipient; tone follows their accent.
+const partnerAccent = (name) => (name === COUPLE.partner_b.name ? 'lavender' : 'coral');
+const otherPartner = (name) => (name === COUPLE.partner_a.name ? COUPLE.partner_b.name : COUPLE.partner_a.name);
+
+const AddLetterModal = ({ open, onClose, coupleId, onAdd }) => {
+  const [category, setCategory] = useState(LETTER_CATEGORIES[0]);
+  const [body, setBody] = useState('');
+  const [recipient, setRecipient] = useState(COUPLE.partner_b.name);
+  const [sealed, setSealed] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setCategory(LETTER_CATEGORIES[0]);
+      setBody('');
+      setRecipient(COUPLE.partner_b.name);
+      setSealed(true);
+    }
+  }, [open]);
+
+  const save = async () => {
+    if (!body.trim()) return;
+    setSaving(true);
+    const author = otherPartner(recipient);
+    const written = new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    const fields = {
+      category, author, recipient,
+      written, locked: sealed, tone: partnerAccent(author),
+      body: body.trim(),
+    };
+    if (coupleId) {
+      const saved = await sbAddLetter(coupleId, fields).catch(() => null);
+      onAdd(saved || { ...fields, id: String(Date.now()) });
+    } else {
+      onAdd({ ...fields, id: String(Date.now()) });
+    }
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} maxW="max-w-lg">
+      <div className="flex items-start justify-between mb-5 gap-4">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">New letter</div>
+          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">Write something to come back to</div>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
       </div>
-      <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
-    </div>
-    <div className="space-y-3">
-      <div>
-        <label className="text-[12px] text-ink-600 font-medium">For when</label>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {LETTER_CATEGORIES.slice(0,4).map(c => <Chip key={c} tone="coral" size="sm">{c}</Chip>)}
+      <div className="space-y-3">
+        <div>
+          <label className="text-[12px] text-ink-600 font-medium">For when</label>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {LETTER_CATEGORIES.map(c => (
+              <Chip key={c} tone="coral" size="sm" selected={category === c} onClick={() => setCategory(c)}>{c}</Chip>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-[12px] text-ink-600 font-medium">Letter</label>
+          <textarea
+            value={body}
+            onChange={e => setBody(e.target.value)}
+            rows={6}
+            placeholder="Start anywhere…"
+            className="mt-2 w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none leading-relaxed"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <select
+            value={recipient}
+            onChange={e => setRecipient(e.target.value)}
+            className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]"
+          >
+            <option value={COUPLE.partner_b.name}>For {COUPLE.partner_b.name}</option>
+            <option value={COUPLE.partner_a.name}>For {COUPLE.partner_a.name}</option>
+          </select>
+          <select
+            value={sealed ? 'sealed' : 'open'}
+            onChange={e => setSealed(e.target.value === 'sealed')}
+            className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]"
+          >
+            <option value="sealed">Seal until they open it</option>
+            <option value="open">Leave it open now</option>
+          </select>
         </div>
       </div>
-      <div>
-        <label className="text-[12px] text-ink-600 font-medium">Letter</label>
-        <textarea rows={6} placeholder="Start anywhere…" className="mt-2 w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none leading-relaxed" />
+      <div className="flex items-center justify-end gap-2 mt-6">
+        <Button kind="ghost" onClick={onClose}>Cancel</Button>
+        <Button kind="primary" icon={sealed ? I.Lock : I.Send} onClick={save} disabled={!body.trim() || saving}>
+          {saving ? 'Saving…' : (sealed ? 'Seal letter' : 'Save letter')}
+        </Button>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <select className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]">
-          <option>For Anjali</option><option>For Dhruv</option>
-        </select>
-        <select className="h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]">
-          <option>Seal until they open it</option><option>Seal until a specific date</option>
-        </select>
-      </div>
-    </div>
-    <div className="flex items-center justify-end gap-2 mt-6">
-      <Button kind="ghost" onClick={onClose}>Cancel</Button>
-      <Button kind="primary" icon={I.Lock} onClick={onClose}>Seal letter</Button>
-    </div>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 const LettersPage = ({ coupleId }) => {
   const [letters, setLetters] = useState([]);
@@ -137,6 +198,10 @@ const LettersPage = ({ coupleId }) => {
       setLoading(false);
     }).catch(() => { setLetters(LETTERS); setLoading(false); });
   }, [coupleId]);
+
+  const handleAdd = (letter) => {
+    setLetters(prev => [letter, ...(prev.length ? prev : [])]);
+  };
 
   // All hooks before conditional return
   const allLetters = letters.length ? letters : LETTERS;
@@ -175,7 +240,7 @@ const LettersPage = ({ coupleId }) => {
       </div>
 
       <LetterModal letter={reading} onClose={() => setReading(null)} />
-      <AddLetterModal open={adding} onClose={() => setAdding(false)} />
+      <AddLetterModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdd={handleAdd} />
     </div>
   );
 };
