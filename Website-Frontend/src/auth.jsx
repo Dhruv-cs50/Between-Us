@@ -78,7 +78,7 @@ const AuthScreen = ({ onAuth }) => {
         </form>
 
         <p className="text-center text-[12px] text-ink-400 mt-6 font-mono">
-          private to the two of you
+          just ours.
         </p>
       </div>
     </div>

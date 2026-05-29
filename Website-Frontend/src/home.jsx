@@ -292,13 +292,13 @@ const HomeDashboard = ({ go, coupleId }) => {
           <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium mb-2 flex items-center gap-2">
             <span className="font-mono">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
             <span className="text-ink-300">•</span>
-            <span>Your little place between the miles</span>
+            <span>Our little place between the miles</span>
           </div>
           <h1 className="font-serif-i text-[44px] sm:text-[56px] text-ink-900 leading-[1] tracking-tight">
             Hi Dhruv <span className="text-ink-400">&</span> <span className="underline-scribble">Anjali</span>
           </h1>
           <p className="text-ink-500 mt-2.5 text-[15px] max-w-md">
-            Two cities, one calendar. Here’s what’s soft and small for today.
+            Two cities, one calendar. Here’s what’s ours for today.
           </p>
         </div>
         <div className="flex items-center gap-2">

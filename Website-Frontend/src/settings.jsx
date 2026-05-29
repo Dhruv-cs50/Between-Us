@@ -88,7 +88,7 @@ const SettingsPage = ({ profile, couple }) => {
       <SectionHeader
         eyebrow="Profile"
         title="Settings"
-        sub="Private to the two of you. Only invited people can be here."
+        sub="Just ours. No one else gets in."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -164,7 +164,7 @@ const SettingsPage = ({ profile, couple }) => {
           <div className="mt-4 rounded-xl bg-cream-200 ring-1 ring-ink-900/[0.04] p-3.5">
             <div className="flex items-center gap-2 text-[12.5px] text-ink-700">
               <I.Lock size={13} className="text-ink-500" />
-              <span>Private. Only invited people can access this space.</span>
+              <span>Just ours. No one else gets in here.</span>
             </div>
           </div>
         </Surface>
@@ -172,7 +172,7 @@ const SettingsPage = ({ profile, couple }) => {
 
       {/* Data sections */}
       <Surface className="p-5">
-        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Your data</div>
+        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Our stuff</div>
         <div className="font-serif-i text-2xl text-ink-900 leading-tight mt-1">manage what we made</div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
@@ -245,7 +245,7 @@ const SettingsPage = ({ profile, couple }) => {
           </div>
         )}
         <Button kind="ghost" onClick={() => sbSignOut()}>Sign out</Button>
-        <div className="text-[12px] text-ink-400 font-mono">between us · v0.1 · made for two</div>
+        <div className="text-[12px] text-ink-400 font-mono">between us · made by us, for us</div>
       </div>
     </div>
   );
