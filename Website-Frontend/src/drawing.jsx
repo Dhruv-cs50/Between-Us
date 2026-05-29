@@ -285,8 +285,8 @@ const DrawingGame = ({ coupleId }) => {
           </div>
         </Surface>
 
-        {/* Side toolbar — desktop, scrollable so it never forces page taller */}
-        <div className="space-y-4 lg:overflow-y-auto lg:pb-1">
+        {/* Side toolbar — desktop, min-h-0 lets grid constrain it; overflow-y-auto scrolls */}
+        <div className="space-y-4 min-h-0 lg:overflow-y-auto lg:pb-1">
           <Surface className="p-5 hidden lg:block">
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Tools</div>
 
