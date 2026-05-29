@@ -20,42 +20,99 @@ const useCountdown = (iso) => {
 
 /* — Mood check-in for both partners — */
 const MoodCheckIn = ({ coupleId }) => {
-  const [mood, setMood] = useState({ dhruv: 'happy', anjali: 'quiet' });
+  const [moods, setMoods] = useState({
+    dhruv:  { mood: 'happy', checked_at: null },
+    anjali: { mood: 'quiet', checked_at: null },
+  });
+  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState({});
 
   useEffect(() => {
-    if (!coupleId) return;
+    if (!coupleId) { setLoading(false); return; }
     sbFetchLatestMoods(coupleId).then(data => {
-      if (Object.keys(data).length) setMood(prev => ({ ...prev, ...data }));
-    }).catch(() => {});
+      setMoods(prev => ({
+        dhruv:  data.dhruv  || prev.dhruv,
+        anjali: data.anjali || prev.anjali,
+      }));
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [coupleId]);
 
   const onMoodChange = (who, m) => {
-    setMood(prev => ({ ...prev, [who]: m }));
+    const now = new Date().toISOString();
+    setMoods(prev => ({ ...prev, [who]: { mood: m, checked_at: now } }));
+    setSaved(s => ({ ...s, [who]: true }));
+    setTimeout(() => setSaved(s => ({ ...s, [who]: false })), 1500);
     if (coupleId) sbUpsertMood(coupleId, who, m).catch(() => {});
   };
 
-  const Row = ({ who, name, tone }) =>
-  <div>
-      <div className="flex items-center gap-2.5 mb-2">
-        <Avatar initial={name[0]} tone={tone} size={26} />
-        <span className="text-[13px] text-ink-700"><span className="font-medium text-ink-900">{name}</span> is feeling</span>
-        <span className="text-[13px] text-ink-500 italic ml-auto">
-          {MOODS.find((m) => m.id === mood[who])?.label}
-        </span>
+  const relTime = (iso) => {
+    if (!iso) return null;
+    const diff = Date.now() - new Date(iso).getTime();
+    if (diff < 60000) return 'just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return `${Math.floor(diff / 86400000)}d ago`;
+  };
+
+  const MoodSkeleton = () => (
+    <div className="space-y-4 animate-pulse">
+      {[0, 1].map(i => (
+        <div key={i}>
+          {i === 1 && <div className="h-px bg-ink-900/[0.05] mb-4" />}
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-[26px] h-[26px] rounded-full bg-cream-300" />
+            <div className="h-3 w-28 rounded-full bg-cream-300" />
+          </div>
+          <div className="flex gap-1.5">
+            {[56, 44, 72, 52].map(w => (
+              <div key={w} className="h-7 rounded-full bg-cream-300" style={{ width: w }} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const Row = ({ who, name, tone }) => {
+    const current = moods[who];
+    const moodObj = MOODS.find(m => m.id === current.mood);
+    const ts = relTime(current.checked_at);
+    return (
+      <div>
+        <div className="flex items-center gap-2.5 mb-2">
+          <Avatar initial={name[0]} tone={tone} size={26} />
+          <span className="text-[13px] text-ink-700">
+            <span className="font-medium text-ink-900">{name}</span> is feeling
+          </span>
+          <span className="ml-auto flex items-center gap-1.5 text-[12px]">
+            {saved[who] ? (
+              <span className="text-sage-600 flex items-center gap-1 italic">
+                <I.Check size={12} /> saved
+              </span>
+            ) : (
+              <>
+                <span className="text-ink-700 italic">{moodObj?.emoji} {moodObj?.label}</span>
+                {ts && <span className="text-ink-400 not-italic">· {ts}</span>}
+              </>
+            )}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {MOODS.map(m => (
+            <Chip
+              key={m.id}
+              tone={m.tone === 'butter' ? 'butter' : m.tone === 'ink' ? 'cream' : m.tone}
+              size="sm"
+              selected={current.mood === m.id}
+              onClick={() => onMoodChange(who, m.id)}>
+              {m.emoji} {m.label}
+            </Chip>
+          ))}
+        </div>
       </div>
-      <div className="flex flex-wrap gap-1.5">
-        {MOODS.map((m) =>
-      <Chip
-        key={m.id}
-        tone={m.tone === 'butter' ? 'butter' : m.tone === 'ink' ? 'cream' : m.tone}
-        size="sm"
-        selected={mood[who] === m.id}
-        onClick={() => onMoodChange(who, m.id)}>
-            {m.label}
-          </Chip>
-      )}
-      </div>
-    </div>;
+    );
+  };
 
   return (
     <Surface className="p-5">
@@ -66,13 +123,15 @@ const MoodCheckIn = ({ coupleId }) => {
         </div>
         <I.Mood size={20} className="text-ink-400" />
       </div>
-      <div className="space-y-4">
-        <Row who="dhruv" name="Dhruv" tone="coral" />
-        <Hair />
-        <Row who="anjali" name="Anjali" tone="lavender" />
-      </div>
-    </Surface>);
-
+      {loading ? <MoodSkeleton /> : (
+        <div className="space-y-4">
+          <Row who="dhruv" name="Dhruv" tone="coral" />
+          <Hair />
+          <Row who="anjali" name="Anjali" tone="lavender" />
+        </div>
+      )}
+    </Surface>
+  );
 };
 
 /* — Countdown card — */

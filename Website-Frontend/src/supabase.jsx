@@ -138,10 +138,10 @@ const sbFetchLatestMoods = async (coupleId) => {
     .order('checked_at', { ascending: false })
     .limit(10);
   if (error) throw error;
-  // Return latest mood per person: { dhruv: 'happy', anjali: 'quiet' }
+  // Return latest mood per person: { dhruv: { mood, checked_at }, anjali: { mood, checked_at } }
   const result = {};
   (data || []).forEach(row => {
-    if (!result[row.who]) result[row.who] = row.mood;
+    if (!result[row.who]) result[row.who] = { mood: row.mood, checked_at: row.checked_at };
   });
   return result;
 };

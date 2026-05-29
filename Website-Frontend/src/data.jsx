@@ -165,12 +165,12 @@ const SOUNDTRACK = [
 
 // Mood options for the home check-in
 const MOODS = [
-  { id:'happy',     label:'happy',       tone:'coral'    },
-  { id:'tired',     label:'tired',       tone:'lavender' },
-  { id:'missing',   label:'missing you', tone:'coral'    },
-  { id:'excited',   label:'excited',     tone:'butter'   },
-  { id:'quiet',     label:'quiet',       tone:'sage'     },
-  { id:'stressed',  label:'stressed',    tone:'ink'      },
+  { id:'happy',     label:'happy',       emoji:'😊', tone:'coral'    },
+  { id:'tired',     label:'tired',       emoji:'😴', tone:'lavender' },
+  { id:'missing',   label:'missing you', emoji:'💙', tone:'coral'    },
+  { id:'excited',   label:'excited',     emoji:'✨', tone:'butter'   },
+  { id:'quiet',     label:'quiet',       emoji:'🌿', tone:'sage'     },
+  { id:'stressed',  label:'stressed',    emoji:'😤', tone:'ink'      },
 ];
 
 // Songs quiz category — add to the existing list

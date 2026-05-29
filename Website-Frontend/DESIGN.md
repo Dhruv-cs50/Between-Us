@@ -142,7 +142,7 @@ Dashboard, no hero. Sections, top to bottom:
 2. **Countdown card** (wide) — "Next time together." If `COUPLE.next_visit` is `null`, shows a **"soon 😉"** placeholder + "Pick a date"; otherwise a live D/H/M/S countdown. Plus "Days together" count-up (since anniversary) and "Calls this month."
 3. **MusicCard** + **Latest memory** preview (right column).
 4. **Tonight's choices** — 4 staggered game tiles (Quiz / Future Home / Blurred / Letter).
-5. **Tonight's tiny date** card (numbered steps) + **Mood check-in** (both partners pick a mood chip).
+5. **Tonight's tiny date** card (numbered steps) + **Mood check-in** — both partners pick a mood chip (6 options with emoji: 😊 happy, 😴 tired, 💙 missing you, ✨ excited, 🌿 quiet, 😤 stressed). Shows loading skeleton while fetching, relative timestamp ("just now", "5m ago") after current mood label, ✓ "saved" flash on change. `sbFetchLatestMoods` returns `{ who: { mood, checked_at } }` objects.
 6. **Recent activity** feed.
 
 ### Quiz (`quiz.jsx`)

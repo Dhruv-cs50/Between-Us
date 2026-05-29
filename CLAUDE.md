@@ -157,6 +157,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - **Real photos** — add to memories via "Add memory" modal, or bulk upload to `photos/{couple_id}/` bucket in Supabase Storage and update `img_path` on memory rows
 - **Blurred Photo game** — still uses static photo challenge data. Could be seeded with real photos
 - **Activity feed** — shows "nothing yet" until real interactions happen (quiz attempts, mood check-ins, etc.)
+- **Empty space below "Days together" stat** — in the CountdownCard's left column, the right column (MusicCard + LatestMemory) is taller, leaving blank space. Options discussed: A) distance stat (~8,700 mi apart), B) next milestone countdown (days to 2,000 together), C) best call window overlap (timezone widget), D) "this time last year" memory. Decision pending from Dhruv.
 
 ### Nice to have / future
 - Real-time sync (Supabase subscriptions) so both see each other's mood updates live
