@@ -139,7 +139,7 @@ All exported to `window`. Reuse these — don't hand-roll new buttons/chips.
 ### Home (`home.jsx`)
 Dashboard, no hero. Sections, top to bottom:
 1. **Greeting** — "Hi Dhruv & Anjali" (Anjali gets the scribble underline) + date + a **"Send I miss you"** coral pulse button (shows "Sent · she'll see it" for 2.2s).
-2. **Countdown card** (wide) — "Next time together." If `COUPLE.next_visit` is `null`, shows a **"soon 😉"** placeholder + "Pick a date"; otherwise a live D/H/M/S countdown. Plus "Days together" count-up (since anniversary) and "Calls this month."
+2. **Countdown card** (wide) — "Next time together." If `COUPLE.next_visit` is `null`, shows a **"soon 😉"** placeholder + "Pick a date"; otherwise a live D/H/M/S countdown. Plus "Days together" count-up (since anniversary) and "Calls this month." Below that: a thin strip with **SFO↔BLR distance (8,726 mi · always)** on the left and **days to next milestone** (2k/3k/5k/10k) on the right — fills the empty space that appeared when the right column (MusicCard + LatestMemory) is taller.
 3. **MusicCard** + **Latest memory** preview (right column).
 4. **Tonight's choices** — 4 staggered game tiles (Quiz / Future Home / Blurred / Letter).
 5. **Tonight's tiny date** card (numbered steps) + **Mood check-in** — both partners pick a mood chip (6 options with emoji: 😊 happy, 😴 tired, 💙 missing you, ✨ excited, 🌿 quiet, 😤 stressed). Shows loading skeleton while fetching, relative timestamp ("just now", "5m ago") after current mood label, ✓ "saved" flash on change. `sbFetchLatestMoods` returns `{ who: { mood, checked_at } }` objects.

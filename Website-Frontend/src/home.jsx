@@ -135,11 +135,16 @@ const MoodCheckIn = ({ coupleId }) => {
 };
 
 /* — Countdown card — */
+const SFO_BLR_MILES = 8726;
+const MILESTONES = [2000, 3000, 5000, 10000];
+
 const CountdownCard = () => {
   const isTBD = !COUPLE.next_visit;
   const c = useCountdown(COUPLE.next_visit || Date.now());
   const daysTogether = Math.floor((Date.now() - new Date(COUPLE.anniversary).getTime()) / dayMs);
   const target = COUPLE.next_visit ? new Date(COUPLE.next_visit) : null;
+  const nextMilestoneTarget = MILESTONES.find(m => m > daysTogether) || null;
+  const nextMilestoneDays = nextMilestoneTarget ? nextMilestoneTarget - daysTogether : null;
   const targetLabel = isTBD ?
   'still cooking — a date we’ll pick together' :
   target.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -185,6 +190,23 @@ const CountdownCard = () => {
             <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Calls this month</div>
             <div className="font-serif-i text-4xl text-ink-900 leading-none mt-1">47</div>
           </div>
+        </div>
+
+        {/* Distance + milestone strip */}
+        <div className="mt-4 pt-4 border-t border-ink-900/[0.05] flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-600">
+            <I.Globe size={13} className="text-ink-400 shrink-0" />
+            <span className="font-mono tabular-nums text-ink-800">{SFO_BLR_MILES.toLocaleString()} mi</span>
+            <span className="text-ink-400">apart · always</span>
+          </span>
+          {nextMilestoneTarget && (
+            <span className="text-right text-[12.5px] shrink-0">
+              <span className="text-ink-500">
+                <span className="font-mono font-medium text-ink-900">{nextMilestoneDays}</span> days to{' '}
+                <span className="font-mono font-medium text-ink-900">{nextMilestoneTarget.toLocaleString()}</span>
+              </span>
+            </span>
+          )}
         </div>
       </div>
     </Surface>);
