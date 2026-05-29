@@ -1,0 +1,218 @@
+/* Memories timeline — chronological, filters, featured + random pick. */
+
+/* Memory modal — photo, note, and a Spotify embed for the linked song.
+   If no spotify ID yet, surfaces a paste-link affordance. */
+const MemoryModal = ({ m, onClose }) => {
+  const [linking, setLinking] = useState(false);
+  const [override, setOverride] = useState({}); // memId -> trackId during this session
+  if (!m) return null;
+  const trackId = override[m.id] || m.spotify?.trackId || null;
+
+  const save = (id) => {
+    setOverride(o => ({ ...o, [m.id]: id }));
+    m.spotify = { trackId: id };          // mutate in place — survives navigation
+    setLinking(false);
+  };
+
+  return (
+    <Modal open={!!m} onClose={onClose} maxW="max-w-2xl" padding="p-0">
+      <div className="grid grid-cols-1 sm:grid-cols-[1.1fr,1fr]">
+        <PhotoBlock bg={m.bg} className="aspect-[5/4] sm:aspect-auto sm:h-full" caption={m.date.toLowerCase()} />
+        <div className="p-6 sm:p-7 flex flex-col">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{m.date}</div>
+              <div className="font-serif-i text-3xl text-ink-900 leading-[1.05] mt-1" style={{textWrap:'pretty'}}>{m.title}</div>
+              <div className="text-[12px] text-ink-500 mt-2 inline-flex items-center gap-1.5"><I.Pin size={11} /> {m.location}</div>
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
+          </div>
+
+          <p className="text-[14px] text-ink-700 mt-3 leading-relaxed" style={{textWrap:'pretty'}}>{m.note}</p>
+
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {m.tags.map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
+          </div>
+
+          {/* Music for this memory */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium inline-flex items-center gap-1.5">
+                <I.Music size={12} /> the song underneath
+              </div>
+              {!linking && (
+                <button onClick={() => setLinking(true)} className="text-[12px] text-coral-600 hover:text-coral-700 inline-flex items-center gap-1">
+                  {trackId ? 'change' : 'link a song'} <I.Arrow size={12} />
+                </button>
+              )}
+            </div>
+            {linking ? (
+              <MemorySpotifyEditor memory={m} onSave={save} onCancel={() => setLinking(false)} />
+            ) : trackId ? (
+              <SpotifyEmbed trackId={trackId} height={152} />
+            ) : (
+              <div className="rounded-xl ring-1 ring-ink-900/[0.07] bg-cream-200 px-3.5 py-3 text-[12.5px] text-ink-600 italic">
+                {m.song ? <>{m.song} — <span className="text-ink-500">no Spotify link yet. tap “link a song.”</span></> : 'no song linked.'}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+const MemoryRow = ({ m, side, onOpen }) => (
+  <div className={`relative grid grid-cols-[auto,1fr] sm:grid-cols-[1fr,auto,1fr] gap-4 items-start`}>
+    {side === 'left' ? (
+      <div className="hidden sm:block">
+        <MemCard m={m} align="right" onOpen={onOpen} />
+      </div>
+    ) : <div className="hidden sm:block" />}
+
+    <div className="relative flex flex-col items-center w-6 sm:w-auto">
+      <span className="block w-px h-full bg-ink-900/[0.08] absolute top-0 bottom-0 left-1/2 -translate-x-1/2" />
+      <span className="relative z-[1] w-3 h-3 rounded-full bg-coral-500 ring-4 ring-cream-100 mt-1" />
+      <span className="font-mono text-[11px] text-ink-500 mt-2 whitespace-nowrap hidden sm:block">{m.date}</span>
+    </div>
+
+    {side === 'right' ? (
+      <div><MemCard m={m} align="left" onOpen={onOpen} /></div>
+    ) : (
+      <div className="sm:hidden"><MemCard m={m} align="left" onOpen={onOpen} /></div>
+    )}
+    {side === 'left' && <div className="sm:hidden"><MemCard m={m} align="left" onOpen={onOpen} /></div>}
+  </div>
+);
+
+const MemCard = ({ m, align = 'left', onOpen }) => (
+  <button onClick={() => onOpen?.(m)} className="group text-left rounded-2xl ring-1 ring-ink-900/[0.07] bg-white p-4 hover:shadow-softer hover:ring-ink-900/[0.18] transition-all w-full">
+    <div className="flex gap-3">
+      <PhotoBlock bg={m.bg} className="w-[88px] h-[88px] shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 sm:hidden">
+          <span className="font-mono text-[11px] text-ink-500">{m.date}</span>
+        </div>
+        <div className="font-serif-i text-[20px] text-ink-900 leading-tight mt-0.5" style={{textWrap:'pretty'}}>{m.title}</div>
+        <div className="text-[12px] text-ink-500 mt-1 inline-flex items-center gap-1.5"><I.Pin size={11} /> {m.location}</div>
+        <p className="text-[13px] text-ink-700 mt-2 line-clamp-2" style={{textWrap:'pretty'}}>{m.note}</p>
+        <div className="mt-2.5 flex flex-wrap gap-1.5 items-center">
+          {m.tags.map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
+          {m.song && <span className="inline-flex items-center gap-1 text-[12px] text-ink-500 italic"><I.Music size={11} /> {m.song}</span>}
+        </div>
+        <div className="mt-3 inline-flex items-center gap-1 text-[12px] text-ink-500 group-hover:text-ink-800">
+          {m.song ? 'open & play' : 'open memory'} <I.Arrow size={12} />
+        </div>
+      </div>
+    </div>
+  </button>
+);
+
+const FeaturedMemory = ({ m, onShuffle, onOpen }) => (
+  <Surface className="p-0 overflow-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-[1.1fr,1fr]">
+      <button onClick={() => onOpen(m)} className="block text-left">
+        <PhotoBlock bg={m.bg} className="aspect-[5/3] sm:aspect-auto sm:h-full" caption={`featured · ${m.date.toLowerCase()}`} />
+      </button>
+      <div className="p-6 sm:p-7 flex flex-col">
+        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Featured memory</div>
+        <div className="font-serif-i text-[28px] sm:text-[32px] text-ink-900 leading-[1.05] mt-1.5">{m.title}</div>
+        <div className="text-[12px] text-ink-500 mt-2 inline-flex items-center gap-1.5"><I.Pin size={12} /> {m.location} · {m.date}</div>
+        <p className="text-[14px] text-ink-700 mt-3 leading-relaxed" style={{textWrap:'pretty'}}>{m.note}</p>
+        {m.song && <div className="mt-3 inline-flex items-center gap-1.5 text-[13px] text-lavender-600 italic"><I.Music size={13} /> {m.song}</div>}
+        <div className="mt-auto pt-5 flex items-center gap-2 flex-wrap">
+          <Button kind="primary" icon={I.Play} onClick={() => onOpen(m)}>Open & play</Button>
+          <Button kind="outline" icon={I.Shuffle} onClick={onShuffle}>Random memory</Button>
+        </div>
+      </div>
+    </div>
+  </Surface>
+);
+
+const MemoriesTimeline = () => {
+  const [tag, setTag] = useState('All');
+  const [featured, setFeatured] = useState(MEMORIES[6]); // the rooftop call
+  const [opened, setOpened] = useState(null);
+
+  const filtered = useMemo(() => {
+    return tag === 'All' ? MEMORIES : MEMORIES.filter(m => m.tags.includes(tag));
+  }, [tag]);
+
+  const ordered = [...filtered].sort((a, b) => {
+    // "Someday" sticks at the end
+    if (a.date === 'Someday') return 1; if (b.date === 'Someday') return -1;
+    return new Date(b.date) - new Date(a.date);
+  });
+
+  const shuffle = () => {
+    const pool = MEMORIES.filter(m => m.date !== 'Someday');
+    setFeatured(pool[Math.floor(Math.random() * pool.length)]);
+  };
+
+  return (
+    <div className="space-y-6 fade-up">
+      <SectionHeader
+        eyebrow="Together so far"
+        title="Memories"
+        sub="Proof that distance still made room for us."
+        right={<Button kind="primary" icon={I.Plus}>Add memory</Button>}
+      />
+
+      <FeaturedMemory m={featured} onShuffle={shuffle} onOpen={setOpened} />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Chip tone="ink" size="sm" selected={tag === 'All'} onClick={() => setTag('All')}>All</Chip>
+        {MEMORY_TAGS.map(t => {
+          const n = MEMORIES.filter(m => m.tags.includes(t)).length;
+          const tone = t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream';
+          return <Chip key={t} size="sm" tone={tone} selected={tag === t} onClick={() => setTag(t)}>{t} <span className="opacity-60 font-mono text-[11px] ml-1">{n}</span></Chip>;
+        })}
+      </div>
+
+      {/* Timeline */}
+      <div className="relative">
+        <div className="space-y-5 sm:space-y-7">
+          {ordered.map((m, i) => (
+            <MemoryRow key={m.id} m={m} side={i % 2 === 0 ? 'right' : 'left'} onOpen={setOpened} />
+          ))}
+        </div>
+      </div>
+
+      {/* Map placeholder */}
+      <Surface className="p-0 overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr,1.4fr]">
+          <div className="p-6 sm:p-7">
+            <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Where it happened</div>
+            <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1.5">Two pins, one story</div>
+            <p className="text-[13.5px] text-ink-600 mt-2">Bengaluru ↔ San Francisco, with a few in-between cities.</p>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2 text-[13px]"><span className="w-1.5 h-1.5 rounded-full bg-coral-500" /> Anjali · Bengaluru, IN</div>
+              <div className="flex items-center gap-2 text-[13px]"><span className="w-1.5 h-1.5 rounded-full bg-lavender-500" /> Dhruv · San Francisco, CA</div>
+            </div>
+          </div>
+          <div className="relative h-[200px] sm:h-auto min-h-[200px] overflow-hidden">
+            {/* dotted map placeholder */}
+            <div className="absolute inset-0"
+              style={{
+                background: 'linear-gradient(135deg, #F4ECDD 0%, #EADFC8 100%)',
+                backgroundImage: 'radial-gradient(rgba(28,24,20,0.12) 1px, transparent 1.4px), linear-gradient(135deg, #F4ECDD 0%, #EADFC8 100%)',
+                backgroundSize: '8px 8px, 100% 100%',
+              }} />
+            {/* Arc */}
+            <svg viewBox="0 0 600 240" className="absolute inset-0 w-full h-full">
+              <path d="M70,180 Q300,20 530,150" fill="none" stroke="#DD7E66" strokeWidth="1.5" strokeDasharray="3 4" />
+              <circle cx="70"  cy="180" r="5" fill="#DD7E66" />
+              <circle cx="530" cy="150" r="5" fill="#9E8FBE" />
+              <text x="70"  y="200" fontSize="11" fill="#3D352D" fontFamily="'Geist Mono'" textAnchor="middle">BLR</text>
+              <text x="530" y="170" fontSize="11" fill="#3D352D" fontFamily="'Geist Mono'" textAnchor="middle">SFO</text>
+            </svg>
+          </div>
+        </div>
+      </Surface>
+
+      <MemoryModal m={opened} onClose={() => setOpened(null)} />
+    </div>
+  );
+};
+
+window.MemoriesTimeline = MemoriesTimeline;
