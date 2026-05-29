@@ -123,13 +123,26 @@ const AddLetterModal = ({ open, onClose }) => (
   </Modal>
 );
 
-const LettersPage = () => {
+const LettersPage = ({ coupleId }) => {
+  const [letters, setLetters] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [reading, setReading] = useState(null);
   const [adding, setAdding] = useState(false);
   const [tab, setTab] = useState('All');
 
-  const visible = useMemo(() => tab === 'All' ? LETTERS : LETTERS.filter(l => l.category === tab), [tab]);
-  const unlockedCount = LETTERS.filter(l => !l.locked).length;
+  useEffect(() => {
+    if (!coupleId) { setLoading(false); return; }
+    sbFetchLetters(coupleId).then(data => {
+      setLetters(data.length ? data : LETTERS);
+      setLoading(false);
+    }).catch(() => { setLetters(LETTERS); setLoading(false); });
+  }, [coupleId]);
+
+  if (loading) return <PageSkeleton rows={4} />;
+
+  const allLetters = letters.length ? letters : LETTERS;
+  const visible = useMemo(() => tab === 'All' ? allLetters : allLetters.filter(l => l.category === tab), [tab, allLetters]);
+  const unlockedCount = allLetters.filter(l => !l.locked).length;
 
   return (
     <div className="space-y-6 fade-up">
@@ -141,13 +154,13 @@ const LettersPage = () => {
       />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Chip tone="ink" size="sm" selected={tab === 'All'} onClick={() => setTab('All')}>All ({LETTERS.length})</Chip>
+        <Chip tone="ink" size="sm" selected={tab === 'All'} onClick={() => setTab('All')}>All ({allLetters.length})</Chip>
         {LETTER_CATEGORIES.map(c => {
-          const n = LETTERS.filter(l => l.category === c).length;
+          const n = allLetters.filter(l => l.category === c).length;
           if (!n) return null;
           return <Chip key={c} tone="coral" size="sm" selected={tab === c} onClick={() => setTab(c)}>{c} <span className="opacity-60 font-mono text-[11px] ml-1">{n}</span></Chip>;
         })}
-        <span className="ml-auto text-[12px] text-ink-500"><span className="font-mono">{unlockedCount}</span> unlocked · <span className="font-mono">{LETTERS.length - unlockedCount}</span> sealed</span>
+        <span className="ml-auto text-[12px] text-ink-500"><span className="font-mono">{unlockedCount}</span> unlocked · <span className="font-mono">{allLetters.length - unlockedCount}</span> sealed</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

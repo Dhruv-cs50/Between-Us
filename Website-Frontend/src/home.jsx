@@ -19,8 +19,21 @@ const useCountdown = (iso) => {
 };
 
 /* — Mood check-in for both partners — */
-const MoodCheckIn = () => {
+const MoodCheckIn = ({ coupleId }) => {
   const [mood, setMood] = useState({ dhruv: 'happy', anjali: 'quiet' });
+
+  useEffect(() => {
+    if (!coupleId) return;
+    sbFetchLatestMoods(coupleId).then(data => {
+      if (Object.keys(data).length) setMood(prev => ({ ...prev, ...data }));
+    }).catch(() => {});
+  }, [coupleId]);
+
+  const onMoodChange = (who, m) => {
+    setMood(prev => ({ ...prev, [who]: m }));
+    if (coupleId) sbUpsertMood(coupleId, who, m).catch(() => {});
+  };
+
   const Row = ({ who, name, tone }) =>
   <div>
       <div className="flex items-center gap-2.5 mb-2">
@@ -37,8 +50,7 @@ const MoodCheckIn = () => {
         tone={m.tone === 'butter' ? 'butter' : m.tone === 'ink' ? 'cream' : m.tone}
         size="sm"
         selected={mood[who] === m.id}
-        onClick={() => setMood({ ...mood, [who]: m.id })}>
-        
+        onClick={() => onMoodChange(who, m.id)}>
             {m.label}
           </Chip>
       )}
@@ -233,8 +245,14 @@ const ActivityRow = ({ a }) => {
 
 };
 
-const ActivityHistory = () =>
-<Surface className="p-5">
+const ActivityHistory = ({ coupleId }) => {
+  const [items, setItems] = useState(ACTIVITY);
+  useEffect(() => {
+    if (!coupleId) return;
+    sbFetchActivity(coupleId).then(data => { if (data.length) setItems(data); }).catch(() => {});
+  }, [coupleId]);
+  return (
+  <Surface className="p-5">
     <div className="flex items-center justify-between mb-2">
       <div>
         <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Recent activity</div>
@@ -243,9 +261,11 @@ const ActivityHistory = () =>
       <Chip size="sm" tone="ink">last 7 days</Chip>
     </div>
     <ul className="divide-y divide-ink-900/[0.05] -mx-1 px-1 mt-1">
-      {ACTIVITY.map((a) => <ActivityRow key={a.id} a={a} />)}
+      {items.map((a) => <ActivityRow key={a.id} a={a} />)}
     </ul>
-  </Surface>;
+  </Surface>
+  );
+};
 
 
 /* — Miss-you pulse button — */
@@ -263,7 +283,7 @@ const MissYouButton = () => {
 };
 
 /* — The whole Home page — */
-const HomeDashboard = ({ go }) => {
+const HomeDashboard = ({ go, coupleId }) => {
   return (
     <div className="space-y-7 fade-up">
       {/* Greeting block */}
@@ -298,11 +318,11 @@ const HomeDashboard = ({ go }) => {
       {/* Middle row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2"><TonightDateCard onStart={() => go('dates')} /></div>
-        <MoodCheckIn />
+        <MoodCheckIn coupleId={coupleId} />
       </div>
 
       {/* Activity */}
-      <ActivityHistory />
+      <ActivityHistory coupleId={coupleId} />
     </div>);
 
 };

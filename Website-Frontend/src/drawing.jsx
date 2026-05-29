@@ -11,7 +11,7 @@ const PALETTE = [
   '#FFFFFF', // eraser-as-color (technically: white)
 ];
 
-const DrawingGame = () => {
+const DrawingGame = ({ coupleId }) => {
   const canvasRef = useRef(null);
   const wrapRef   = useRef(null);
   const drawing   = useRef(false);
@@ -134,6 +134,15 @@ const DrawingGame = () => {
 
   const startGame = () => { setPhase('playing'); setTime(60); };
   const tryAgain  = () => { setRatings([]); setReaction(''); setTime(60); setPhase('ready'); clearAll(); };
+
+  useEffect(() => {
+    if (phase === 'reveal' && coupleId && canvasRef.current) {
+      const canvasData = canvasRef.current.toDataURL('image/png');
+      const twist = twists[twists.length - 1] || '';
+      const rating = ratings.join(', ');
+      sbSaveDrawing(coupleId, canvasData, twist, rating).catch(() => {});
+    }
+  }, [phase]);
 
   const addTwist = (t) => setTwists(prev => prev.includes(t) ? prev : [...prev, t]);
 

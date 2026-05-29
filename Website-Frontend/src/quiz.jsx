@@ -92,7 +92,7 @@ const AddQuestionDrawer = ({ open, onClose }) => {
   );
 };
 
-const QuizGame = () => {
+const QuizGame = ({ coupleId }) => {
   const [category, setCategory] = useState('All');
   const [step, setStep] = useState('intro');     // intro | playing | result
   const [idx, setIdx]   = useState(0);
@@ -118,12 +118,14 @@ const QuizGame = () => {
   const pick = (i) => {
     if (picked != null) return;
     setPicked(i);
-    if (i === q.answer) {
+    const correct = i === q.answer;
+    if (correct) {
       setScore(s => s + 1);
       setStreak(s => { const n = s + 1; setBestStreak(b => Math.max(b, n)); return n; });
     } else {
       setStreak(0);
     }
+    if (coupleId) sbRecordQuizAttempt(coupleId, 'dhruv', q.id, i, correct).catch(() => {});
   };
   const next = () => {
     if (idx + 1 >= total) { setStep('result'); return; }

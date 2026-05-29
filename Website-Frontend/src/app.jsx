@@ -1,15 +1,15 @@
 /* App shell: sidebar nav (desktop), bottom nav (mobile), top utility bar, routed body. */
 
 const ROUTES = [
-  { id:'home',     label:'Home',         icon: I.Home,     Page: () => <HomeDashboard go={setRoute} /> },
-  { id:'quiz',     label:'Quiz',         icon: I.Quiz,     Page: () => <QuizGame /> },
-  { id:'drawing',  label:'Future Home',  icon: I.Draw,     Page: () => <DrawingGame /> },
-  { id:'blurred',  label:'Blurred Photo',icon: I.Photo,    Page: () => <BlurredPhotoGame /> },
-  { id:'dates',    label:'Date Night',   icon: I.Spinner,  Page: () => <DateNight /> },
-  { id:'letters',  label:'Letters',      icon: I.Letter,   Page: () => <LettersPage /> },
-  { id:'memories', label:'Memories',     icon: I.Timeline, Page: () => <MemoriesTimeline /> },
-  { id:'bucket',   label:'Bucket List',  icon: I.List,     Page: () => <BucketList /> },
-  { id:'settings', label:'Settings',     icon: I.Gear,     Page: () => <SettingsPage /> },
+  { id:'home',     label:'Home',         icon: I.Home,     Page: (p) => <HomeDashboard go={setRoute} {...p} /> },
+  { id:'quiz',     label:'Quiz',         icon: I.Quiz,     Page: (p) => <QuizGame {...p} /> },
+  { id:'drawing',  label:'Future Home',  icon: I.Draw,     Page: (p) => <DrawingGame {...p} /> },
+  { id:'blurred',  label:'Blurred Photo',icon: I.Photo,    Page: (p) => <BlurredPhotoGame {...p} /> },
+  { id:'dates',    label:'Date Night',   icon: I.Spinner,  Page: (p) => <DateNight {...p} /> },
+  { id:'letters',  label:'Letters',      icon: I.Letter,   Page: (p) => <LettersPage {...p} /> },
+  { id:'memories', label:'Memories',     icon: I.Timeline, Page: (p) => <MemoriesTimeline {...p} /> },
+  { id:'bucket',   label:'Bucket List',  icon: I.List,     Page: (p) => <BucketList {...p} /> },
+  { id:'settings', label:'Settings',     icon: I.Gear,     Page: (p) => <SettingsPage {...p} /> },
 ];
 
 let setRoute = () => {}; // patched below

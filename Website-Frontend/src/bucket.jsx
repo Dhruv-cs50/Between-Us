@@ -70,15 +70,31 @@ const AddBucketModal = ({ open, onClose }) => (
   </Modal>
 );
 
-const BucketList = () => {
-  const [items, setItems] = useState(() => BUCKET_ITEMS.map(b => ({ ...b })));
+const BucketList = ({ coupleId }) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [status, setStatus] = useState('All');
   const [adding, setAdding] = useState(false);
 
-  const cycle = (id) => {
+  const reload = () => {
+    if (!coupleId) { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setLoading(false); return; }
+    sbFetchBucketItems(coupleId).then(data => {
+      setItems(data.length ? data : BUCKET_ITEMS.map(b => ({ ...b })));
+      setLoading(false);
+    }).catch(() => { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setLoading(false); });
+  };
+
+  useEffect(() => { reload(); }, [coupleId]);
+
+  if (loading) return <PageSkeleton rows={6} />;
+
+  const cycle = async (id) => {
     const order = ['Dreaming', 'Planned', 'Done'];
-    setItems(items.map(b => b.id === id ? { ...b, status: order[(order.indexOf(b.status) + 1) % order.length] } : b));
+    const item = items.find(b => b.id === id);
+    const next = order[(order.indexOf(item.status) + 1) % order.length];
+    setItems(items.map(b => b.id === id ? { ...b, status: next } : b));
+    if (coupleId) await sbUpdateBucketStatus(id, next);
   };
 
   const visible = items.filter(b =>

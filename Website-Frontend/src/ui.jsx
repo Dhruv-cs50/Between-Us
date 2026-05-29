@@ -191,25 +191,43 @@ const CountUp = ({ to, duration = 1100, className = '' }) => {
   return <span className={`tabular-nums ${className}`}>{n.toLocaleString()}</span>;
 };
 
-// Image-placeholder block — soft gradient, mono caption, optional dotted overlay
-const PhotoBlock = ({ bg, caption, blur = 0, className = '', children, rounded = '2xl' }) => (
-  <div
-    className={`relative overflow-hidden rounded-${rounded} ${className}`}
-    style={{ background: bg || 'linear-gradient(135deg, #E5DEF0 0%, #C8B8DD 60%, #7D6FA0 100%)' }}
-  >
-    <div className="absolute inset-0" style={{ filter: blur ? `blur(${blur}px) saturate(1.1)` : 'none', transform: 'scale(1.05)', transition: 'filter .6s ease' }}>
-      {/* paper noise */}
-      <div className="absolute inset-0 mix-blend-overlay opacity-30"
-           style={{ backgroundImage:'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1.4px)', backgroundSize:'3px 3px' }} />
-      <div className="absolute inset-0 mix-blend-multiply opacity-25"
-           style={{ backgroundImage:'radial-gradient(rgba(0,0,0,0.4) 1px, transparent 1.4px)', backgroundSize:'5px 5px' }} />
+// Image block — shows real photo if imgPath, else gradient placeholder.
+const PhotoBlock = ({ bg, imgPath, caption, blur = 0, className = '', children, rounded = '2xl' }) => {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    if (imgPath) sbGetPhotoUrl(imgPath).then(u => setUrl(u));
+  }, [imgPath]);
+
+  const style = url
+    ? { backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { background: bg || 'linear-gradient(135deg, #E5DEF0 0%, #C8B8DD 60%, #7D6FA0 100%)' };
+
+  return (
+    <div className={`relative overflow-hidden rounded-${rounded} ${className}`} style={style}>
+      {!url && (
+        <div className="absolute inset-0" style={{ filter: blur ? `blur(${blur}px) saturate(1.1)` : 'none', transform: 'scale(1.05)', transition: 'filter .6s ease' }}>
+          <div className="absolute inset-0 mix-blend-overlay opacity-30"
+               style={{ backgroundImage:'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1.4px)', backgroundSize:'3px 3px' }} />
+          <div className="absolute inset-0 mix-blend-multiply opacity-25"
+               style={{ backgroundImage:'radial-gradient(rgba(0,0,0,0.4) 1px, transparent 1.4px)', backgroundSize:'5px 5px' }} />
+        </div>
+      )}
+      {caption ? (
+        <div className="absolute bottom-2.5 left-2.5 font-mono text-[10px] tracking-tight uppercase text-white/90 bg-ink-900/30 backdrop-blur px-2 py-0.5 rounded-full">
+          {caption}
+        </div>
+      ) : null}
+      {children}
     </div>
-    {caption ? (
-      <div className="absolute bottom-2.5 left-2.5 font-mono text-[10px] tracking-tight uppercase text-white/90 bg-ink-900/30 backdrop-blur px-2 py-0.5 rounded-full">
-        {caption}
-      </div>
-    ) : null}
-    {children}
+  );
+};
+
+// Loading skeleton for async page data
+const PageSkeleton = ({ rows = 4 }) => (
+  <div className="space-y-4 animate-pulse">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="bg-cream-200 rounded-2xl" style={{ height: 80 + (i % 2) * 40 }} />
+    ))}
   </div>
 );
 
@@ -290,6 +308,6 @@ Object.assign(window, {
   I, Icon,
   Surface, Panel, SectionHeader, Button, Chip, Avatar, PairAvatar, Stat,
   CountUp, useCountUp,
-  PhotoBlock, Hair, LiveDot, Modal, SoundtrackCard,
+  PhotoBlock, PageSkeleton, Hair, LiveDot, Modal, SoundtrackCard,
   useState, useEffect, useRef, useMemo, useCallback,
 });

@@ -27,7 +27,54 @@ const SettingsRow = ({ icon: IconC, title, sub, right }) => (
   </div>
 );
 
-const SettingsPage = () => {
+const InviteSection = ({ profile }) => {
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = () => {
+    navigator.clipboard.writeText(profile.invite_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const link = async () => {
+    setStatus('loading');
+    try {
+      await sbLinkPartner(code.trim());
+      setStatus('linked');
+      setTimeout(() => window.location.reload(), 1200);
+    } catch { setStatus('error'); }
+  };
+
+  return (
+    <Surface className="p-5">
+      <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Link partner account</div>
+      <div className="font-serif-i text-2xl text-ink-900 mt-1">connect to each other</div>
+      <p className="text-[13px] text-ink-500 mt-2 max-w-md">
+        Share your invite code with your partner, or paste theirs to link accounts and share data.
+      </p>
+      <div className="mt-4 rounded-xl bg-cream-200 ring-1 ring-ink-900/[0.06] p-3.5 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-[11px] text-ink-500">Your invite code</div>
+          <div className="font-mono text-[15px] text-ink-900 mt-0.5">{profile.invite_code}</div>
+        </div>
+        <Button kind="soft" size="sm" onClick={copyCode}>{copied ? 'Copied!' : 'Copy'}</Button>
+      </div>
+      <div className="flex gap-2 mt-3">
+        <input value={code} onChange={e => setCode(e.target.value)}
+          placeholder="Paste partner's invite code"
+          className="flex-1 h-10 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+        <Button kind="coral" size="sm" disabled={!code || status === 'loading'} onClick={link}>
+          {status === 'loading' ? 'Linking…' : status === 'linked' ? 'Linked!' : 'Link'}
+        </Button>
+      </div>
+      {status === 'error' && <div className="text-[12px] text-coral-600 mt-2">Code not found. Check with your partner.</div>}
+    </Surface>
+  );
+};
+
+const SettingsPage = ({ profile, couple }) => {
   const [theme, setTheme] = useState('Warm');
   const [notif, setNotif] = useState({ daily: true, miss: true, date: false });
   const [editingMusic, setEditingMusic] = useState(false);
@@ -189,8 +236,16 @@ const SettingsPage = () => {
         <EditLibraryModal open={editingMusic} onClose={() => setEditingMusic(false)} />
       </Surface>
 
-      <div className="text-center text-[12px] text-ink-400 font-mono pt-2">
-        between us · v0.1 · made for two
+      {profile && !profile.couple_id && <InviteSection profile={profile} />}
+
+      <div className="flex flex-col items-center gap-3 pt-2">
+        {profile && (
+          <div className="text-[13px] text-ink-500">
+            Signed in as <span className="font-medium text-ink-800">{profile.name}</span>
+          </div>
+        )}
+        <Button kind="ghost" onClick={() => sbSignOut()}>Sign out</Button>
+        <div className="text-[12px] text-ink-400 font-mono">between us · v0.1 · made for two</div>
       </div>
     </div>
   );

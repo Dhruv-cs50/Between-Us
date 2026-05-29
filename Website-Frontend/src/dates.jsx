@@ -67,12 +67,19 @@ const DateWheel = ({ angle, onSpin, spinning, slices }) => {
   );
 };
 
-const DateNight = () => {
+const DateNight = ({ coupleId }) => {
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [picked, setPicked] = useState(null);
   const [filter, setFilter] = useState('All');
-  const [saved, setSaved]   = useState([...SAVED_DATES]);
+  const [saved, setSaved] = useState([]);
+
+  useEffect(() => {
+    if (!coupleId) { setSaved(SAVED_DATES.map(d => d.id || d)); return; }
+    sbFetchSavedDates(coupleId).then(rows => {
+      setSaved(rows.map(r => r.date_idea_id));
+    }).catch(() => setSaved(SAVED_DATES.map(d => d.id || d)));
+  }, [coupleId]);
 
   const slices = DATE_CATEGORIES;
 
@@ -95,7 +102,12 @@ const DateNight = () => {
     }, 3500);
   };
 
-  const toggleSave = (id) => setSaved(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  const toggleSave = (id) => {
+    const strId = String(id);
+    const isNowSaved = !saved.includes(strId);
+    setSaved(s => isNowSaved ? [...s, strId] : s.filter(x => x !== strId));
+    if (coupleId && isNowSaved) sbSaveDate(coupleId, strId).catch(() => {});
+  };
 
   const filtered = filter === 'All' ? DATE_IDEAS : DATE_IDEAS.filter(d => d.cat === filter);
 
@@ -148,8 +160,8 @@ const DateNight = () => {
               </ol>
               <div className="mt-5 flex items-center gap-2">
                 <Button kind="primary" icon={I.Play}>Start this date</Button>
-                <Button kind={saved.includes(picked.id) ? 'coral' : 'outline'} icon={I.Heart} onClick={() => toggleSave(picked.id)}>
-                  {saved.includes(picked.id) ? 'Saved' : 'Save'}
+                <Button kind={saved.includes(String(picked.id)) ? 'coral' : 'outline'} icon={I.Heart} onClick={() => toggleSave(picked.id)}>
+                  {saved.includes(String(picked.id)) ? 'Saved' : 'Save'}
                 </Button>
                 <Button kind="ghost" icon={I.Shuffle} onClick={spin}>Spin again</Button>
               </div>
@@ -185,7 +197,7 @@ const DateNight = () => {
             <div key={d.id} className="rounded-2xl ring-1 ring-ink-900/[0.07] bg-white p-4 hover:ring-ink-900/[0.18] transition-all">
               <div className="flex items-center justify-between gap-2">
                 <Chip size="sm" tone={d.cat === 'Music' ? 'lavender' : d.cat === 'Food' ? 'butter' : d.cat === 'Future' ? 'sage' : 'coral'}>{d.cat}</Chip>
-                <button onClick={() => toggleSave(d.id)} className={`w-7 h-7 rounded-full inline-flex items-center justify-center ${saved.includes(d.id) ? 'bg-coral-500 text-white' : 'bg-cream-200 text-ink-500 hover:text-ink-800'}`}>
+                <button onClick={() => toggleSave(d.id)} className={`w-7 h-7 rounded-full inline-flex items-center justify-center ${saved.includes(String(d.id)) ? 'bg-coral-500 text-white' : 'bg-cream-200 text-ink-500 hover:text-ink-800'}`}>
                   <I.Heart size={13} />
                 </button>
               </div>

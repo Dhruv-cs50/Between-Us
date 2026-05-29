@@ -129,25 +129,121 @@ const FeaturedMemory = ({ m, onShuffle, onOpen }) => (
   </Surface>
 );
 
-const MemoriesTimeline = () => {
+const AddMemoryModal = ({ open, onClose, coupleId, onAdded }) => {
+  const [form, setForm] = useState({ title: '', date: '', location: '', note: '', tags: [] });
+  const [file, setFile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const allTags = ['Calls', 'Visits', 'Firsts', 'Funny', 'Hard Moments', 'Future', 'Music'];
+
+  const toggleTag = (t) => setForm(f => ({
+    ...f, tags: f.tags.includes(t) ? f.tags.filter(x => x !== t) : [...f.tags, t]
+  }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const memory = await sbAddMemory(coupleId, {
+        title: form.title, date: form.date, location: form.location,
+        note: form.note, tags: form.tags,
+        bg: 'linear-gradient(135deg, #F4ECDD, #EADFC8)',
+      });
+      if (file) {
+        const imgPath = await sbUploadPhoto(coupleId, memory.id, file);
+        await sbUpdateMemory(memory.id, { img_path: imgPath });
+      }
+      setForm({ title: '', date: '', location: '', note: '', tags: [] });
+      setFile(null);
+      onAdded();
+      onClose();
+    } catch (err) {
+      console.error('Add memory failed', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} maxW="max-w-lg">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">New memory</div>
+          <div className="font-serif-i text-3xl text-ink-900 mt-1">add a moment</div>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
+      </div>
+      <form onSubmit={submit} className="space-y-3">
+        <input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+          placeholder="Title" className="w-full h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+        <div className="grid grid-cols-2 gap-3">
+          <input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+            className="h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+          <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))}
+            placeholder="Location" className="h-10 px-3 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]" />
+        </div>
+        <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+          placeholder="What happened…" rows={3}
+          className="w-full px-3 py-2.5 rounded-xl bg-cream-100 ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px] resize-none" />
+        <div>
+          <div className="text-[11px] text-ink-500 mb-1.5">Tags</div>
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.map(t => (
+              <Chip key={t} size="sm" tone={form.tags.includes(t) ? 'coral' : 'cream'}
+                selected={form.tags.includes(t)} onClick={() => toggleTag(t)}>{t}</Chip>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-[11px] text-ink-500 mb-1.5">Photo (optional)</div>
+          <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} className="text-[13px] text-ink-600" />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button kind="ghost" type="button" onClick={onClose}>Cancel</Button>
+          <Button kind="primary" icon={I.Plus} disabled={saving}>{saving ? 'saving…' : 'Add memory'}</Button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+const MemoriesTimeline = ({ coupleId }) => {
+  const [memories, setMemories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [tag, setTag] = useState('All');
-  const [featured, setFeatured] = useState(MEMORIES[6]); // the rooftop call
+  const [featured, setFeatured] = useState(null);
   const [opened, setOpened] = useState(null);
+  const [adding, setAdding] = useState(false);
+
+  const reload = () => {
+    if (!coupleId) { setLoading(false); return; }
+    sbFetchMemories(coupleId).then(data => {
+      setMemories(data);
+      if (data.length && !featured) setFeatured(data[0]);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  };
+
+  useEffect(() => { reload(); }, [coupleId]);
+
+  if (loading) return <PageSkeleton rows={5} />;
+
+  const allMemories = memories.length ? memories : MEMORIES;
 
   const filtered = useMemo(() => {
-    return tag === 'All' ? MEMORIES : MEMORIES.filter(m => m.tags.includes(tag));
-  }, [tag]);
+    return tag === 'All' ? allMemories : allMemories.filter(m => (m.tags || []).includes(tag));
+  }, [tag, allMemories]);
 
   const ordered = [...filtered].sort((a, b) => {
-    // "Someday" sticks at the end
     if (a.date === 'Someday') return 1; if (b.date === 'Someday') return -1;
     return new Date(b.date) - new Date(a.date);
   });
 
   const shuffle = () => {
-    const pool = MEMORIES.filter(m => m.date !== 'Someday');
+    const pool = allMemories.filter(m => m.date !== 'Someday');
     setFeatured(pool[Math.floor(Math.random() * pool.length)]);
   };
+
+  const displayFeatured = featured || allMemories[0];
 
   return (
     <div className="space-y-6 fade-up">
@@ -155,15 +251,15 @@ const MemoriesTimeline = () => {
         eyebrow="Together so far"
         title="Memories"
         sub="Proof that distance still made room for us."
-        right={<Button kind="primary" icon={I.Plus}>Add memory</Button>}
+        right={<Button kind="primary" icon={I.Plus} onClick={() => setAdding(true)}>Add memory</Button>}
       />
 
-      <FeaturedMemory m={featured} onShuffle={shuffle} onOpen={setOpened} />
+      {displayFeatured && <FeaturedMemory m={displayFeatured} onShuffle={shuffle} onOpen={setOpened} />}
 
       <div className="flex flex-wrap items-center gap-2">
         <Chip tone="ink" size="sm" selected={tag === 'All'} onClick={() => setTag('All')}>All</Chip>
-        {MEMORY_TAGS.map(t => {
-          const n = MEMORIES.filter(m => m.tags.includes(t)).length;
+        {(MEMORY_TAGS || ['Calls','Visits','Firsts','Funny','Hard Moments','Future','Music']).map(t => {
+          const n = allMemories.filter(m => (m.tags||[]).includes(t)).length;
           const tone = t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream';
           return <Chip key={t} size="sm" tone={tone} selected={tag === t} onClick={() => setTag(t)}>{t} <span className="opacity-60 font-mono text-[11px] ml-1">{n}</span></Chip>;
         })}
@@ -211,6 +307,7 @@ const MemoriesTimeline = () => {
       </Surface>
 
       <MemoryModal m={opened} onClose={() => setOpened(null)} />
+      <AddMemoryModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdded={reload} />
     </div>
   );
 };
