@@ -201,9 +201,81 @@ Key exports (all on `window`):
 
 1. **Reuse `ui.jsx` primitives** and the `I.*` icon set; match existing spacing/typography.
 2. **Keep the Dhruv=coral / Anjali=lavender / sage=calm** color logic.
-3. New page → file + `window` export + script tag (before `app.jsx`) + `ROUTES` entry.
+3. New page → file + `window` export + script tag (before `auth.jsx`) + `ROUTES` entry with `(p) => <Component {...p} />` pattern.
 4. Use `.font-serif-i` for any display text; mono uppercase eyebrows above titles.
-5. Photos are gradient `PhotoBlock`s until real images exist — every photo-bearing record carries a `bg` gradient string.
-6. Persist user-set state (e.g. moods, spotify links, saved dates) to `localStorage` and rehydrate on load.
-7. Canonical HTML, double-quoted attrs, explicit closing tags (the editor relies on it).
-8. Mobile-first: hit targets ≥44px, bottom nav has safe-area padding.
+5. Photos: `PhotoBlock` now supports both gradient `bg` and real `imgPath` (Supabase Storage path → signed URL).
+6. Live data → Supabase via helpers in `supabase.jsx`. Static content → `data.jsx`.
+7. **Never** call `useMemo`/`useEffect`/`useState` after a conditional `return`. Declare all hooks first.
+8. **Always** use `ReactDOM.createPortal(content, document.body)` for modals — CSS animations leave transforms on ancestors that trap `fixed` elements.
+9. Avoid `date` as a PostgREST column name in `.order()` — it's a reserved word and causes 400 errors.
+10. In JSX attribute expressions `{}`, use straight quotes only. Curly/smart quotes `'` `'` break Babel.
+11. Mobile-first: hit targets ≥44px, bottom nav has safe-area padding.
+
+---
+
+## 9. Backend (Supabase)
+
+**Live project:** `https://bgjwqqgpfljjgvsydpao.supabase.co`
+
+### Tables (all with RLS)
+| Table | Purpose |
+|---|---|
+| `couples` | One row per couple. Holds `next_visit`, `anniversary` |
+| `profiles` | One row per auth user. Links to `couple_id`, stores `role`, `invite_code` |
+| `memories` | Personal memories. `img_path` = storage path (null = use `bg` gradient) |
+| `letters` | Open When letters. `locked` = sealed |
+| `bucket_items` | Bucket list. `status`: Dreaming → Planned → Done |
+| `mood_checkins` | Per-person mood with timestamp. Latest per person = current mood |
+| `activity` | Feed items. `type`, `who`, `payload` (jsonb) |
+| `saved_dates` | Date Night saves. References `date_idea_id` from static `DATE_IDEAS` |
+| `quiz_attempts` | Records each answer. `question_id` references static `QUIZ_QUESTIONS` |
+| `drawings` | Canvas PNG (base64) + twist + rating |
+
+### RLS pattern
+All tables use `my_couple_id()` helper function:
+```sql
+select couple_id from profiles where id = auth.uid()
+```
+Policies: `using (couple_id = my_couple_id())` for reads, `with check` for writes.
+
+### Storage
+- Bucket: `photos` (private)
+- Path: `{couple_id}/{memory_id}.{ext}`
+- Access: signed URLs with 1hr expiry via `sbGetPhotoUrl(imgPath)`
+
+### Auth
+- Email + password, public sign-ups disabled
+- Two accounts: Dhruv + Anjali (Anjali pending)
+- Couple linking: first user creates couple, gets `invite_code`; second user pastes code in Settings
+
+---
+
+## 10. Deployment
+
+- **Hosting:** Vercel — `https://between-us-rho.vercel.app/`
+- **Repo:** `Dhruv-cs50/Between-Us` on GitHub
+- **Auto-deploy:** Every `git push` to `main` triggers Vercel build
+- **Root directory:** `Website-Frontend` (set in Vercel project settings)
+- **Build:** None — static HTML/JS site
+
+---
+
+## 11. Known Issues & Remaining Work
+
+### Must fix
+- [ ] Seed real memories, letters, bucket items into Supabase (currently showing static data)
+- [ ] Create Anjali's Supabase account and link via invite code
+
+### To improve
+- [ ] Spotify track IDs in `data.jsx` are placeholder guesses — paste real links via Edit Library modal
+- [ ] `next_visit` is null — update in Supabase `couples` table when a date is set
+- [ ] Memory modal is read-only after creation — no edit/delete UI yet
+- [ ] Blurred Photo game uses static gradient placeholders — needs real seeded photos
+
+### Future features
+- [ ] Real-time sync (Supabase `subscribe()`) — both see mood updates live
+- [ ] "Send I miss you" actually notifies Anjali (push notification / email)
+- [ ] Spotify OAuth so music card links automatically
+- [ ] Anjali writes letters through the UI (currently requires DB insert)
+- [ ] Mobile PWA — add to home screen with icon
+- [ ] Activity feed auto-populated from real interactions (quiz plays, moods, drawings)

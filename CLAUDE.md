@@ -2,19 +2,33 @@
 
 ## What This Is
 
-Private web app for a long-distance couple: **Dhruv (SFO) & Anjali (BLR)**. Replaces loneliness of distance with shared daily rituals — mood check-ins, mini-games, letters, memory archive, countdown to next visit.
+Private web app for **Dhruv (SFO) & Anjali (BLR)**. Replaces loneliness of distance with shared daily rituals — mood check-ins, mini-games, letters, memory archive, countdown to next visit.
 
-**Not** a marketing site. Opens directly into the app dashboard.
+Opens directly into the app dashboard. No marketing page. No public access.
+
+**Live URL:** https://between-us-rho.vercel.app/
+
+---
+
+## Current Status
+
+**Deployed and working.** Auth-gated, Supabase backend live, Vercel auto-deploys on `git push`.
+
+- Dhruv's account: created and linked to couple
+- Anjali's account: pending — create in Supabase dashboard, give her invite code from Settings
+- DB: all tables created with RLS. Static fallback data shows until real data is seeded
+- Storage: `photos` private bucket live with RLS
+- Photos: add via "Add memory" modal on the site, or bulk seed via Supabase dashboard
 
 ---
 
 ## Tech Stack
 
-- React 18 + Babel standalone (transpiled in-browser, **no build step**)
-- Tailwind via CDN (`cdn.tailwindcss.com`) + inline `tailwind.config`
-- Fonts: Instrument Serif (display, always italic), Geist (body), Geist Mono (labels/numbers)
-- Hash-based routing (`window.location.hash`), no router library
-- No backend yet — all data in `src/data.jsx` as mock data, shaped for future Supabase
+- React 18 + Babel standalone (in-browser transpile, **no build step**)
+- Tailwind CDN + inline `tailwind.config`
+- Supabase JS v2 CDN (UMD build) — auth, DB, storage
+- Hash-based routing, no router library
+- Vercel for hosting (auto-deploy on push to `main`)
 
 ---
 
@@ -22,39 +36,70 @@ Private web app for a long-distance couple: **Dhruv (SFO) & Anjali (BLR)**. Repl
 
 ```
 Website-Frontend/
-  index.html          ← Tailwind config, global CSS, font + script loads
-  DESIGN.md           ← Full design spec (design system, conventions, data model)
+  index.html          ← Tailwind config, global CSS, script load order
+  DESIGN.md           ← Full design spec
   src/
-    data.jsx          ← All mock data (couple, quiz, dates, letters, memories, bucket…)
-    ui.jsx            ← Shared primitives + icon set I.* (exported to window)
-    music.jsx         ← MusicCard / SoundtrackCard
+    supabase.jsx      ← Supabase client + all DB/storage helpers (loads 1st)
+    data.jsx          ← Static content: quiz questions, date ideas, draw twists, etc.
+    ui.jsx            ← Shared primitives + icons I.* + Modal (portal) + PageSkeleton
+    music.jsx         ← MusicCard, SpotifyEmbed, TwoClocks
+    auth.jsx          ← Login screen (shown when no session)
     home.jsx          ← Home dashboard
     quiz.jsx          ← Relationship Quiz
     drawing.jsx       ← "Future Home, Badly" canvas game
     blurred.jsx       ← "Guess the Blurred Photo" game
     dates.jsx         ← Date Night spinner wheel
     letters.jsx       ← "Open When" letters
-    memories.jsx      ← Memories timeline
+    memories.jsx      ← Memories timeline + AddMemoryModal
     bucket.jsx        ← Bucket list
-    settings.jsx      ← Couple settings
-    app.jsx           ← Shell (sidebar, topbar, mobile nav, routing) — loads LAST
+    settings.jsx      ← Settings, sign out, invite code / partner linking
+    app.jsx           ← Shell: session boot, sidebar, topbar, mobile nav, routing
 ```
+
+**Load order in index.html (critical):**
+`supabase CDN → supabase.jsx → data.jsx → ui.jsx → music.jsx → home.jsx → quiz.jsx → drawing.jsx → blurred.jsx → dates.jsx → letters.jsx → memories.jsx → bucket.jsx → settings.jsx → auth.jsx → app.jsx`
 
 ---
 
 ## Critical Architecture Rules
 
 ### Cross-file sharing
-Each Babel script has its own scope. Shared components/data are published via `Object.assign(window, { … })` at the bottom of each file. **Load order matters** — `data.jsx` and `ui.jsx` load first; `app.jsx` loads last.
+Each Babel script has its own scope. Export to `window` via `Object.assign(window, { … })` at the bottom. Load order enforced in `index.html`.
 
 ### Adding a new page
-1. Create `src/<page>.jsx`
-2. Export component to `window` at bottom
-3. Add `<script type="text/babel" src="src/<page>.jsx">` in `index.html` **before** `app.jsx`
-4. Add entry to `ROUTES` array in `app.jsx`
+1. Create `src/<page>.jsx`, export component to `window`
+2. Add `<script type="text/babel" src="src/<page>.jsx">` in `index.html` before `auth.jsx`
+3. Add to `ROUTES` in `app.jsx` using `Page: (p) => <YourComponent {...p} />` pattern
 
-### State persistence
-User-set state (moods, spotify links, saved dates) → `localStorage`, rehydrated on load.
+### Props every page receives
+`app.jsx` passes `{ coupleId, profile, couple }` to every page via the `ROUTES` spread pattern. Use `coupleId` for all Supabase queries.
+
+### Supabase helpers (all in `supabase.jsx`, all on `window`)
+- Auth: `sbSignIn`, `sbSignOut`, `sbGetSession`, `sbOnAuthChange`
+- Couple: `sbGetProfile`, `sbGetCouple`, `sbLinkPartner`, `sbUpdateNextVisit`
+- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbFetchLetters`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
+- Storage: `sbUploadPhoto`, `sbGetPhotoUrl`
+
+### Modal — ALWAYS use `ReactDOM.createPortal`
+The `Modal` component in `ui.jsx` uses `ReactDOM.createPortal(content, document.body)`. This is non-negotiable. CSS animations (`fade-up`, `page-enter`) leave identity transforms on ancestors, which trap `position: fixed` inside the animated element instead of the viewport. Portal escapes this.
+
+### Hooks order
+Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All hooks must be declared before any early returns. This caused blank pages on Memories and Letters.
+
+### Static vs live data
+- **Static in `data.jsx`** (never changes): quiz questions, date ideas, draw twists/ratings, photo challenges, soundtrack defaults, letter categories, bucket sections
+- **Live in Supabase**: memories, letters, bucket items, mood check-ins, activity, saved dates, quiz attempts, drawings
+
+---
+
+## Supabase
+
+- **Project URL:** `https://bgjwqqgpfljjgvsydpao.supabase.co`
+- **Anon key:** `sb_publishable_q62z0muB7Ztmn51lVEyXNQ_0OfD5FP0`
+- **Auth:** Email + password, public sign-ups disabled
+- **Storage bucket:** `photos` (private), path `{couple_id}/{memory_id}.{ext}`
+- **Couple ID:** `69fad414-6606-4e11-b9dc-4f819bb0388d` (Dhruv's couple)
+- **Dhruv's user ID:** `9c2c7506-0286-4bfd-89ac-7d7cc8dc37f5`
 
 ---
 
@@ -62,31 +107,25 @@ User-set state (moods, spotify links, saved dates) → `localStorage`, rehydrate
 
 **Colors:**
 - Background: `#FAF6EF` (cream-100). Surfaces: white.
-- Text: `ink-900/800/700` for content, `ink-500/400` for muted. Never `#000`.
-- **Dhruv = coral (`#DD7E66`), Anjali = lavender (`#9E8FBE`)**. Keep consistent.
-- Sage = calm / "connected" state. Butter = 4th accent (use literals, not Tailwind token).
+- **Dhruv = coral (`#DD7E66`), Anjali = lavender (`#9E8FBE`)** — consistent everywhere
+- Sage = calm/"connected". Butter = 4th accent (literals only, no Tailwind token)
+- Text: `ink-900/800/700` content, `ink-500/400` muted. Never `#000`
 
 **Typography:**
-- Display/headings: `.font-serif-i` (Instrument Serif italic). Always italic.
-- Body/UI: Geist (`font-sans`), 13–15px.
-- Labels/dates/numbers: Geist Mono (`font-mono`), uppercase, `tracking-[0.14em]`, 11px, ink-500.
+- Display: `.font-serif-i` (Instrument Serif italic). Always italic
+- Body: Geist `font-sans`, 13–15px
+- Labels: Geist Mono `font-mono`, uppercase, `tracking-[0.14em]`, 11px, ink-500
 
-**Shared components (all in `ui.jsx`, on `window`):**
-`Surface`, `Panel`, `SectionHeader`, `Button`, `Chip`, `Avatar`, `PairAvatar`, `Stat`, `CountUp`, `PhotoBlock`, `Hair`, `LiveDot`, `Modal`, `SoundtrackCard`, `I.*` icons.
-
-Do **not** hand-roll new buttons/chips — reuse these.
-
-**Photos:** Gradient `PhotoBlock`s only — no real images yet. Every photo-bearing record carries a `bg` gradient string.
+**Key gotcha:** Never use curly/smart quotes (`'` `'`) inside JSX attribute expressions `{}` — Babel rejects them. Use straight quotes only. Curly quotes in JSX text content (not attributes) are fine.
 
 ---
 
-## Tone & Content Rules
+## Copy Rules
 
-- Personal, playful, inside-jokey. Never corporate.
-- Humor: dry, affectionate ("zoning violation, but cute").
-- Music: reference titles/artists only — **never reproduce lyrics**.
-- Cultural texture: SFO↔BLR, dosa, monsoon, etc. — authentic, not stereotyped.
-- No filler. Fewer, warmer elements over dense dashboards.
+- Personal, first-person-plural. "Our" not "Your". "Us" not "you two"
+- Never corporate or SaaS-y
+- "Our little place between the miles" — not "Your little place"
+- "just ours." — not "private to the two of you"
 
 ---
 
@@ -106,24 +145,33 @@ Do **not** hand-roll new buttons/chips — reuse these.
 
 ---
 
-## Key Data Constants
+## What Still Needs Doing
 
-- `COUPLE.anniversary` = `2021-03-10`
-- `COUPLE.next_visit` = `null` (shows "soon 😉" placeholder until set)
-- `COUPLE.cities` = SFO / BLR
-- Dhruv = partner_a (coral), Anjali = partner_b (lavender)
+### High priority
+- **Seed real data** — memories, letters, bucket items need to be inserted into Supabase (currently showing static fallback data)
+- **Add Anjali's account** — create in Supabase dashboard → she signs in → Settings → paste Dhruv's invite code to link
+- **Fix Spotify track IDs** — default IDs in `data.jsx` are placeholder guesses. Use Edit Library modal (pencil icon on music card) to paste real Spotify links
 
----
+### Medium priority
+- **`next_visit` date** — currently null (shows "soon 😉"). Update via `sbUpdateNextVisit` or directly in Supabase `couples` table
+- **Real photos** — add to memories via "Add memory" modal, or bulk upload to `photos/{couple_id}/` bucket in Supabase Storage and update `img_path` on memory rows
+- **Blurred Photo game** — still uses static photo challenge data. Could be seeded with real photos
+- **Activity feed** — shows "nothing yet" until real interactions happen (quiz attempts, mood check-ins, etc.)
 
-## Decisions Log
-
-See `MEMORY.md` (project memory) and `Website-Frontend/DESIGN.md` (full design spec).
+### Nice to have / future
+- Real-time sync (Supabase subscriptions) so both see each other's mood updates live
+- Push notifications ("I miss you" button actually notifies Anjali)
+- Email reminders for date night
+- Spotify OAuth so the music card works without manual link pasting
+- Anjali being able to write and seal her own letters through the UI
+- Add/edit memories from the memory modal (currently read-only after creation)
+- Mobile PWA (add to home screen)
 
 ---
 
 ## Update Protocol
 
-When any task is completed, update:
-1. This file (`CLAUDE.md`) if architecture or structure changed
-2. `Website-Frontend/DESIGN.md` if design system or pages changed
-3. Project memory (`MEMORY.md` in Claude memory dir) with decisions made
+After every completed task:
+1. Update this file if architecture, stack, or structure changed
+2. Update `Website-Frontend/DESIGN.md` if design system or page behavior changed
+3. Append to decisions log in Claude memory (`decisions_between_us.md`)
