@@ -79,7 +79,8 @@ Each Babel script has its own scope. Export to `window` via `Object.assign(windo
 ### Supabase helpers (all in `supabase.jsx`, all on `window`)
 - Auth: `sbSignIn`, `sbSignOut`, `sbGetSession`, `sbOnAuthChange`
 - Couple: `sbGetProfile`, `sbGetCouple`, `sbLinkPartner`, `sbUpdateNextVisit`
-- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbDeleteMemory`, `sbFetchLetters`, `sbAddLetter`, `sbUpdateLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
+- Data: `sbFetchMemories`, `sbAddMemory`, `sbUpdateMemory`, `sbDeleteMemory`, `sbFetchLetters`, `sbAddLetter`, `sbUpdateLetter`, `sbDeleteLetter`, `sbFetchBucketItems`, `sbAddBucketItem`, `sbUpdateBucketStatus`, `sbUpdateBucketItem`, `sbDeleteBucketItem`, `sbFetchLatestMoods`, `sbUpsertMood`, `sbFetchActivity`, `sbLogActivity`, `sbFetchSavedDates`, `sbSaveDate`, `sbRecordQuizAttempt`, `sbSaveDrawing`
+- Presence: `sbJoinPresence(coupleId, userId, meta, onChange)`, `sbLeavePresence(channel)` — Realtime Presence channel `presence:{coupleId}`, keyed by user id; powers live "both online" in TopBar/Sidebar
 - Storage: `sbUploadPhoto`, `sbGetPhotoUrl`
 
 ### Modal — ALWAYS use `ReactDOM.createPortal`
@@ -160,7 +161,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - ~~**Letters write**~~ — DONE (2026-05-29). `sbAddLetter` helper added; `AddLetterModal` is stateful and saves to Supabase with optimistic prepend. Author derived from recipient, tone from author accent, sealed/open toggle. "Seal until specific date" deferred (no `unlock_date` column).
 
 ### Nice to have / future
-- Real-time sync (Supabase subscriptions) so both see each other's mood updates live
+- ~~Real-time presence~~ — DONE (2026-05-29). Live online status via Realtime Presence. Next: broadcast mood/memory/letter changes over the same channel so data syncs live (`postgres_changes` or channel broadcast).
 - Push notifications ("I miss you" button actually notifies Anjali)
 - Email reminders for date night
 - Spotify OAuth so the music card works without manual link pasting
@@ -169,6 +170,10 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Mobile PWA (add to home screen)
 
 ### Resolved this session (2026-05-29 cont.)
+- ~~Letters/Bucket read-only~~: `LetterModal` and `BucketModal` now support edit + delete for DB-backed rows (`sbDeleteLetter`, `sbUpdateBucketItem`, `sbDeleteBucketItem` added). Letters: pencil on each saved envelope opens straight into edit mode (`startEditing`) — only way to manage a *sealed* letter. Bucket: one modal handles add + edit (state `undefined`/`null`/object); local `upsertItem`/`removeItem` keep the list in sync.
+- ~~"Both online" was hardcoded~~: **real-time presence**. `App` joins Supabase Realtime Presence channel `presence:{coupleId}` keyed by auth id; `partnerOnline = presentIds.some(id => id !== myUserId)`. TopBar shows pulsing sage "both online" or grey "{partner} offline" (dot visible on mobile, label `sm+`); Sidebar card mirrors it. Helpers `sbJoinPresence`/`sbLeavePresence`. No DB tables — default Realtime config.
+- **Memory photo (re)upload**: `MemoryModal` edit form has a file input; on save uploads via `sbUploadPhoto` → `img_path`. All memory `PhotoBlock`s pass `imgPath` so real photos render.
+- **Mobile pass**: form controls render ≥16px on `max-width:640px` (no iOS focus-zoom); `.no-scrollbar` rows get momentum scrolling; presence dot now visible on mobile TopBar.
 - ~~Memory modal read-only~~: `MemoryModal` now has inline edit + delete for DB-backed memories. Pencil flips the text column to an edit form (title/date/location/note/tags); Save → `sbUpdateMemory` + in-place mutate; Delete → `window.confirm` → `sbDeleteMemory`. Both call `onChanged` → `reload()`. Added `sbDeleteMemory` helper. `reload` now preserves featured memory by id (or picks newest). Static fallback memories stay read-only (`editable` gated on `memories.length > 0`). All 15 `src/*.jsx` transpile clean; app boots 0 console errors.
 - ~~Home page blank / crash~~: 3 curly-quote string delimiters in `home.jsx` `CountdownCard` (`useState(‘’)`, `toLocaleDateString(‘en-US’…)`, `setDateInput(‘’)`) threw a Babel SyntaxError. Replaced with straight quotes. All 15 `src/*.jsx` now transpile clean; app loads with 0 console errors.
 

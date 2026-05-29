@@ -80,9 +80,14 @@
     background-image: radial-gradient(rgba(28,24,20,0.025) 1px, transparent 1px);
     background-size: 3px 3px; mix-blend-mode: multiply; opacity: 0.6;
   }
-  /* Hide native scrollbar in horizontal chip rows */
+  /* Hide native scrollbar in horizontal chip rows; momentum scroll on touch */
   .no-scrollbar::-webkit-scrollbar { display: none; }
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  /* Mobile: render form controls ≥16px so iOS Safari doesn't auto-zoom on focus.
+     Desktop keeps the 13–14px design sizes. */
+  @media (max-width: 640px) {
+    input, select, textarea { font-size: 16px; }
+  }
   /* Tap highlight off */
   * { -webkit-tap-highlight-color: transparent; }
   /* Range input theme */

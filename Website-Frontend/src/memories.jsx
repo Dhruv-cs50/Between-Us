@@ -6,11 +6,12 @@
 const MEMORY_TAG_OPTS = ['Calls', 'Visits', 'Firsts', 'Funny', 'Hard Moments', 'Future', 'Music'];
 const tagTone = (t) => t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream';
 
-const MemoryModal = ({ m, onClose, editable, onChanged }) => {
+const MemoryModal = ({ m, onClose, editable, onChanged, coupleId }) => {
   const [linking, setLinking] = useState(false);
   const [override, setOverride] = useState({}); // memId -> trackId during this session
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState(null);
   const [form, setForm] = useState({ title: '', date: '', location: '', note: '', tags: [] });
 
   // Sync edit form whenever a different memory opens; reset edit mode.
@@ -18,6 +19,7 @@ const MemoryModal = ({ m, onClose, editable, onChanged }) => {
     if (m) setForm({ title: m.title || '', date: m.date || '', location: m.location || '', note: m.note || '', tags: m.tags || [] });
     setEditing(false);
     setLinking(false);
+    setFile(null);
   }, [m]);
 
   if (!m) return null;
@@ -36,11 +38,16 @@ const MemoryModal = ({ m, onClose, editable, onChanged }) => {
   const saveEdit = async () => {
     setBusy(true);
     try {
-      await sbUpdateMemory(m.id, {
+      const fields = {
         title: form.title, date: form.date, location: form.location,
         note: form.note, tags: form.tags,
-      });
-      Object.assign(m, form);            // mutate in place so the open modal reflects edits
+      };
+      if (file && coupleId) {
+        fields.img_path = await sbUploadPhoto(coupleId, m.id, file);
+      }
+      await sbUpdateMemory(m.id, fields);
+      Object.assign(m, fields);          // mutate in place so the open modal reflects edits
+      setFile(null);
       setEditing(false);
       onChanged?.();
     } catch (err) {
@@ -69,7 +76,7 @@ const MemoryModal = ({ m, onClose, editable, onChanged }) => {
   return (
     <Modal open={!!m} onClose={onClose} maxW="max-w-2xl" padding="p-0">
       <div className="grid grid-cols-1 sm:grid-cols-[1.1fr,1fr]">
-        <PhotoBlock bg={m.bg} className="aspect-[5/4] sm:aspect-auto sm:h-full" caption={String(m.date).toLowerCase()} />
+        <PhotoBlock bg={m.bg} imgPath={m.img_path} className="aspect-[5/4] sm:aspect-auto sm:h-full" caption={String(m.date).toLowerCase()} />
         <div className="p-6 sm:p-7 flex flex-col">
           <div className="flex items-start justify-between gap-3">
             {editing ? (
@@ -103,6 +110,10 @@ const MemoryModal = ({ m, onClose, editable, onChanged }) => {
                 {MEMORY_TAG_OPTS.map(t => (
                   <Chip key={t} size="sm" tone={form.tags.includes(t) ? 'coral' : 'cream'} selected={form.tags.includes(t)} onClick={() => toggleTag(t)}>{t}</Chip>
                 ))}
+              </div>
+              <div className="mt-3">
+                <div className="text-[11px] text-ink-500 mb-1.5">{m.img_path ? 'Replace photo' : 'Add a photo'} (optional)</div>
+                <input type="file" accept="image/*" onChange={e => setFile(e.target.files[0])} className="text-[13px] text-ink-600" />
               </div>
               <div className="flex items-center justify-between gap-2 mt-4">
                 <Button kind="ghost" icon={I.Trash} onClick={del} disabled={busy} className="text-coral-600">Delete</Button>
@@ -178,7 +189,7 @@ const MemoryRow = ({ m, side, onOpen }) => (
 const MemCard = ({ m, align = 'left', onOpen }) => (
   <button onClick={() => onOpen?.(m)} className="group text-left rounded-2xl ring-1 ring-ink-900/[0.07] bg-white p-4 hover:shadow-softer hover:ring-ink-900/[0.18] transition-all w-full">
     <div className="flex gap-3">
-      <PhotoBlock bg={m.bg} className="w-[88px] h-[88px] shrink-0" />
+      <PhotoBlock bg={m.bg} imgPath={m.img_path} className="w-[88px] h-[88px] shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 sm:hidden">
           <span className="font-mono text-[11px] text-ink-500">{m.date}</span>
@@ -202,7 +213,7 @@ const FeaturedMemory = ({ m, onShuffle, onOpen }) => (
   <Surface className="p-0 overflow-hidden">
     <div className="grid grid-cols-1 sm:grid-cols-[1.1fr,1fr]">
       <button onClick={() => onOpen(m)} className="block text-left">
-        <PhotoBlock bg={m.bg} className="aspect-[5/3] sm:aspect-auto sm:h-full" caption={`featured · ${m.date.toLowerCase()}`} />
+        <PhotoBlock bg={m.bg} imgPath={m.img_path} className="aspect-[5/3] sm:aspect-auto sm:h-full" caption={`featured · ${m.date.toLowerCase()}`} />
       </button>
       <div className="p-6 sm:p-7 flex flex-col">
         <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Featured memory</div>
@@ -404,6 +415,7 @@ const MemoriesTimeline = ({ coupleId }) => {
         onClose={() => setOpened(null)}
         editable={memories.length > 0}
         onChanged={reload}
+        coupleId={coupleId}
       />
       <AddMemoryModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdded={reload} />
     </div>

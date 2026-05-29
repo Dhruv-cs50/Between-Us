@@ -14,7 +14,7 @@ const ROUTES = [
 
 let setRoute = () => {}; // patched below
 
-const Sidebar = ({ route, onRoute }) => (
+const Sidebar = ({ route, onRoute, online, partnerName }) => (
   <aside className="hidden lg:flex sticky top-0 h-screen w-[244px] shrink-0 flex-col py-6 px-4 border-r border-ink-900/[0.06] bg-cream-50/60 backdrop-blur-sm z-10">
     {/* Brand */}
     <div className="px-2 mb-7">
@@ -46,7 +46,8 @@ const Sidebar = ({ route, onRoute }) => (
           <div className="min-w-0">
             <div className="text-[13px] text-ink-900 font-medium leading-tight">Dhruv & Anjali</div>
             <div className="text-[11px] text-ink-500 leading-tight mt-0.5 inline-flex items-center gap-1.5">
-              <span className="pulse-dot inline-block w-1.5 h-1.5 rounded-full bg-sage-500" /> connected
+              <span className={`${online ? 'pulse-dot' : ''} inline-block w-1.5 h-1.5 rounded-full ${online ? 'bg-sage-500' : 'bg-ink-300'}`} />
+              {online ? 'both online' : `waiting for ${partnerName}`}
             </div>
           </div>
         </div>
@@ -70,9 +71,12 @@ const NavItem = ({ r, active, onRoute }) => (
   </button>
 );
 
-const TopBar = ({ route, openNav }) => {
+const TopBar = ({ route, online, partnerName }) => {
   const r = ROUTES.find(x => x.id === route);
   const date = new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  const status = online
+    ? { dot: 'bg-sage-500', anim: 'pulse-dot', label: 'both online' }
+    : { dot: 'bg-ink-300',  anim: '',          label: `${partnerName} offline` };
   return (
     <div className="sticky top-0 z-20 backdrop-blur bg-cream-100/85 border-b border-ink-900/[0.05]">
       <div className="flex items-center justify-between gap-3 px-5 lg:px-9 h-14">
@@ -93,9 +97,9 @@ const TopBar = ({ route, openNav }) => {
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden md:inline-flex"><TwoClocks /></span>
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[12px] text-ink-500">
-            <span className="pulse-dot inline-block w-1.5 h-1.5 rounded-full bg-sage-500" />
-            both online
+          <span className="inline-flex items-center gap-1.5 text-[12px] text-ink-500" title={status.label}>
+            <span className={`${status.anim} inline-block w-1.5 h-1.5 rounded-full ${status.dot}`} />
+            <span className="hidden sm:inline">{status.label}</span>
           </span>
           <PairAvatar size={26} />
         </div>
@@ -127,6 +131,7 @@ const App = () => {
   const [session, setSession] = useState(undefined); // undefined = checking, null = no session
   const [profile, setProfile] = useState(null);
   const [couple, setCouple] = useState(null);
+  const [presentIds, setPresentIds] = useState([]); // online user ids in our presence channel
 
   // Boot: check existing session, load profile + couple
   useEffect(() => {
@@ -167,6 +172,15 @@ const App = () => {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  // Real-time presence: join a per-couple channel so each partner sees the other go on/offline.
+  useEffect(() => {
+    const uid = session?.user?.id;
+    const cid = profile?.couple_id;
+    if (!uid || !cid) return;
+    const ch = sbJoinPresence(cid, uid, { id: uid }, (ids) => setPresentIds(ids));
+    return () => { sbLeavePresence(ch); setPresentIds([]); };
+  }, [session && session.user && session.user.id, profile && profile.couple_id]);
+
   const onRoute = (id) => {
     setRouteState(id);
     window.location.hash = id;
@@ -197,11 +211,19 @@ const App = () => {
   const coupleId = profile?.couple_id || null;
   const Active = (ROUTES.find(r => r.id === route) || ROUTES[0]).Page;
 
+  // Presence → names. Partner is "online" if any present id isn't mine.
+  const myUserId = session?.user?.id;
+  const partnerOnline = presentIds.some(id => id !== myUserId);
+  const names = [COUPLE.partner_a.name, COUPLE.partner_b.name];
+  const roleName = profile?.role && names.find(n => n.toLowerCase() === String(profile.role).toLowerCase());
+  const myName = profile?.display_name || profile?.name || roleName || names[0];
+  const partnerName = names.find(n => n !== myName) || names[1];
+
   return (
     <div className="min-h-screen flex">
-      <Sidebar route={route} onRoute={onRoute} />
+      <Sidebar route={route} onRoute={onRoute} online={partnerOnline} partnerName={partnerName} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar route={route} />
+        <TopBar route={route} online={partnerOnline} partnerName={partnerName} />
         <main key={route} className="px-5 sm:px-7 lg:px-9 py-6 lg:py-9 pb-28 lg:pb-12 max-w-[1200px] w-full mx-auto page-enter">
           <Active coupleId={coupleId} profile={profile} couple={couple} />
         </main>

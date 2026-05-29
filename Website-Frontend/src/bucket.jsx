@@ -15,10 +15,10 @@ const SECTION_TONES = {
   'Silly goals':      'butter',
 };
 
-const BucketRow = ({ item, onCycle }) => {
+const BucketRow = ({ item, onCycle, onEdit, editable }) => {
   const tone = STATUS_TONES[item.status];
   return (
-    <div className="rounded-2xl ring-1 ring-ink-900/[0.07] bg-white p-4 sm:p-5 hover:shadow-softer transition-all">
+    <div className="group rounded-2xl ring-1 ring-ink-900/[0.07] bg-white p-4 sm:p-5 hover:shadow-softer transition-all">
       <div className="flex items-start gap-4">
         <button onClick={() => onCycle(item.id)} aria-label="cycle status"
           className={`mt-0.5 shrink-0 w-7 h-7 rounded-full ring-1 inline-flex items-center justify-center transition-all ${
@@ -33,6 +33,12 @@ const BucketRow = ({ item, onCycle }) => {
             <Chip size="sm" tone={SECTION_TONES[item.section] || 'cream'}>{item.section}</Chip>
             <Chip size="sm" tone={tone.chip}>{item.status}</Chip>
             <span className="text-[12px] text-ink-500 ml-auto">added by <span className="font-medium text-ink-700">{item.addedBy}</span></span>
+            {editable && (
+              <button onClick={() => onEdit(item)} aria-label="edit item" title="Edit"
+                className="p-1.5 -mr-1 rounded-full text-ink-400 hover:text-ink-700 hover:bg-cream-200 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                <I.Pencil size={14} />
+              </button>
+            )}
           </div>
           <div className={`font-serif-i text-[20px] sm:text-[22px] leading-tight mt-2 ${item.status === 'Done' ? 'text-ink-500 line-through decoration-1' : 'text-ink-900'}`} style={{textWrap:'pretty'}}>
             {item.title}
@@ -44,7 +50,8 @@ const BucketRow = ({ item, onCycle }) => {
   );
 };
 
-const AddBucketModal = ({ open, onClose, coupleId, onAdd }) => {
+const BucketModal = ({ open, onClose, coupleId, item, onSaved, onDeleted }) => {
+  const editMode = !!item;
   const [title, setTitle] = useState('');
   const [section, setSection] = useState(BUCKET_SECTIONS[0]);
   const [note, setNote] = useState('');
@@ -52,19 +59,36 @@ const AddBucketModal = ({ open, onClose, coupleId, onAdd }) => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) { setTitle(''); setNote(''); setSection(BUCKET_SECTIONS[0]); setStatus('Dreaming'); }
-  }, [open]);
+    if (!open) return;
+    if (item) { setTitle(item.title); setSection(item.section); setNote(item.note || ''); setStatus(item.status); }
+    else { setTitle(''); setNote(''); setSection(BUCKET_SECTIONS[0]); setStatus('Dreaming'); }
+  }, [open, item]);
 
   const save = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    const fields = { title: title.trim(), section, note: note.trim(), status, addedBy: 'Dhruv' };
-    if (coupleId) {
-      const saved = await sbAddBucketItem(coupleId, fields).catch(() => null);
-      onAdd(saved || { ...fields, id: String(Date.now()) });
+    const fields = { title: title.trim(), section, note: note.trim(), status };
+    if (editMode) {
+      if (coupleId) await sbUpdateBucketItem(item.id, fields).catch(() => {});
+      onSaved({ ...item, ...fields });
     } else {
-      onAdd({ ...fields, id: String(Date.now()) });
+      const full = { ...fields, addedBy: 'Dhruv' };
+      if (coupleId) {
+        const saved = await sbAddBucketItem(coupleId, full).catch(() => null);
+        onSaved(saved || { ...full, id: String(Date.now()) });
+      } else {
+        onSaved({ ...full, id: String(Date.now()) });
+      }
     }
+    setSaving(false);
+    onClose();
+  };
+
+  const del = async () => {
+    if (!window.confirm('Remove this from the list? This can\'t be undone.')) return;
+    setSaving(true);
+    if (coupleId) await sbDeleteBucketItem(item.id).catch(() => {});
+    onDeleted(item.id);
     setSaving(false);
     onClose();
   };
@@ -73,8 +97,8 @@ const AddBucketModal = ({ open, onClose, coupleId, onAdd }) => {
     <Modal open={open} onClose={onClose} maxW="max-w-lg">
       <div className="flex items-start justify-between mb-5">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Add to bucket list</div>
-          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">A new someday</div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{editMode ? 'Edit bucket item' : 'Add to bucket list'}</div>
+          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">{editMode ? 'Tend a someday' : 'A new someday'}</div>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
       </div>
@@ -103,11 +127,16 @@ const AddBucketModal = ({ open, onClose, coupleId, onAdd }) => {
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-end gap-2 mt-5">
-        <Button kind="ghost" onClick={onClose}>Cancel</Button>
-        <Button kind="primary" icon={I.Plus} onClick={save} disabled={!title.trim() || saving}>
-          {saving ? 'Adding…' : 'Add to list'}
-        </Button>
+      <div className="flex items-center justify-between gap-2 mt-5">
+        {editMode
+          ? <Button kind="ghost" icon={I.Trash} onClick={del} disabled={saving} className="text-coral-600">Delete</Button>
+          : <span />}
+        <div className="flex gap-2">
+          <Button kind="ghost" onClick={onClose}>Cancel</Button>
+          <Button kind="primary" icon={editMode ? I.Check : I.Plus} onClick={save} disabled={!title.trim() || saving}>
+            {saving ? 'Saving…' : (editMode ? 'Save' : 'Add to list')}
+          </Button>
+        </div>
       </div>
     </Modal>
   );
@@ -118,14 +147,16 @@ const BucketList = ({ coupleId }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [status, setStatus] = useState('All');
-  const [adding, setAdding] = useState(false);
+  const [modalItem, setModalItem] = useState(undefined); // undefined=closed, null=add, object=edit
+  const [dbBacked, setDbBacked] = useState(false);
 
   const reload = () => {
-    if (!coupleId) { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setLoading(false); return; }
+    if (!coupleId) { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setDbBacked(false); setLoading(false); return; }
     sbFetchBucketItems(coupleId).then(data => {
+      setDbBacked(data.length > 0);
       setItems(data.length ? data : BUCKET_ITEMS.map(b => ({ ...b })));
       setLoading(false);
-    }).catch(() => { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setLoading(false); });
+    }).catch(() => { setItems(BUCKET_ITEMS.map(b => ({ ...b }))); setDbBacked(false); setLoading(false); });
   };
 
   useEffect(() => { reload(); }, [coupleId]);
@@ -139,6 +170,12 @@ const BucketList = ({ coupleId }) => {
     setItems(items.map(b => b.id === id ? { ...b, status: next } : b));
     if (coupleId) await sbUpdateBucketStatus(id, next);
   };
+
+  const upsertItem = (item) => {
+    setDbBacked(true);
+    setItems(prev => prev.some(b => b.id === item.id) ? prev.map(b => b.id === item.id ? item : b) : [item, ...prev]);
+  };
+  const removeItem = (id) => setItems(prev => prev.filter(b => b.id !== id));
 
   const visible = items.filter(b =>
     (filter === 'All' || b.section === filter) &&
@@ -154,7 +191,7 @@ const BucketList = ({ coupleId }) => {
         eyebrow="Someday list"
         title="Bucket List"
         sub="Things we are saving for the same someday."
-        right={<Button kind="primary" icon={I.Plus} onClick={() => setAdding(true)}>Add to list</Button>}
+        right={<Button kind="primary" icon={I.Plus} onClick={() => setModalItem(null)}>Add to list</Button>}
       />
 
       {/* Progress */}
@@ -203,7 +240,7 @@ const BucketList = ({ coupleId }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {visible.map(item => <BucketRow key={item.id} item={item} onCycle={cycle} />)}
+          {visible.map(item => <BucketRow key={item.id} item={item} onCycle={cycle} onEdit={setModalItem} editable={dbBacked} />)}
         </div>
       )}
 
@@ -221,11 +258,13 @@ const BucketList = ({ coupleId }) => {
         </div>
       )}
 
-      <AddBucketModal
-        open={adding}
-        onClose={() => setAdding(false)}
+      <BucketModal
+        open={modalItem !== undefined}
+        onClose={() => setModalItem(undefined)}
         coupleId={coupleId}
-        onAdd={(item) => setItems(prev => [item, ...prev])}
+        item={modalItem || null}
+        onSaved={upsertItem}
+        onDeleted={removeItem}
       />
     </div>
   );

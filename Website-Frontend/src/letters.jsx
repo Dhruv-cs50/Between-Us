@@ -19,7 +19,7 @@ const toneStamp = {
   butter:   'bg-[#E8B647]',
 };
 
-const Envelope = ({ l, onOpen }) => (
+const Envelope = ({ l, onOpen, editable, onManage }) => (
   <button
     onClick={() => !l.locked && onOpen(l)}
     className={`group relative text-left rounded-2xl ring-1 transition-all overflow-hidden ${toneRing[l.tone] || toneRing.coral} hover:-translate-y-0.5 hover:shadow-soft`}
@@ -30,6 +30,17 @@ const Envelope = ({ l, onOpen }) => (
       <path d="M0,0 L100,55 L200,0 L200,80 L0,80 Z" fill={toneFlap[l.tone] || toneFlap.coral} />
       <path d="M0,0 L100,55 L200,0" fill="none" stroke="rgba(28,24,20,0.06)" />
     </svg>
+    {/* Manage (edit/delete/unseal) — only on saved letters; reachable even when sealed */}
+    {editable && (
+      <span
+        role="button" tabIndex={0} title="Edit letter"
+        onClick={(e) => { e.stopPropagation(); onManage(l); }}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onManage(l); } }}
+        className="absolute top-3 left-3 z-[1] inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/80 text-ink-600 ring-1 ring-ink-900/10 hover:bg-white"
+      >
+        <I.Pencil size={14} />
+      </span>
+    )}
     {/* Wax / stamp */}
     <span className={`absolute top-3 right-3 inline-flex items-center justify-center w-9 h-9 rounded-full ${toneStamp[l.tone]} text-white shadow-softer ring-2 ring-white/70`}>
       {l.locked ? <I.Lock size={14} /> : <I.Unlock size={14} />}
@@ -55,41 +66,125 @@ const Envelope = ({ l, onOpen }) => (
   </button>
 );
 
-const LetterModal = ({ letter, onClose }) => {
+// author is whichever partner is NOT the recipient; tone follows their accent.
+const partnerAccent = (name) => (name === COUPLE.partner_b.name ? 'lavender' : 'coral');
+const otherPartner = (name) => (name === COUPLE.partner_a.name ? COUPLE.partner_b.name : COUPLE.partner_a.name);
+
+const LetterModal = ({ letter, onClose, editable, onChanged, startEditing, coupleId }) => {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ category: '', recipient: '', body: '', sealed: false });
+
+  useEffect(() => {
+    if (letter) setForm({ category: letter.category, recipient: letter.recipient, body: letter.body || '', sealed: !!letter.locked });
+    setEditing(!!startEditing);
+  }, [letter, startEditing]);
+
   if (!letter) return null;
+
+  const saveEdit = async () => {
+    if (!form.body.trim()) return;
+    setBusy(true);
+    const author = otherPartner(form.recipient);
+    const fields = {
+      category: form.category, recipient: form.recipient, author,
+      tone: partnerAccent(author), locked: form.sealed, body: form.body.trim(),
+    };
+    try {
+      if (coupleId) await sbUpdateLetter(letter.id, fields);
+      Object.assign(letter, fields);
+      setEditing(false);
+      onChanged?.();
+    } catch (err) {
+      console.error('Update letter failed', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const del = async () => {
+    if (!window.confirm('Delete this letter? This can\'t be undone.')) return;
+    setBusy(true);
+    try {
+      if (coupleId) await sbDeleteLetter(letter.id);
+      onChanged?.();
+      onClose();
+    } catch (err) {
+      console.error('Delete letter failed', err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const selCls = 'h-11 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]';
+
   return (
     <Modal open={!!letter} onClose={onClose} maxW="max-w-xl" padding="p-0">
       <div className="flex items-start justify-between p-6 pb-3">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{letter.category}</div>
-          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">For {letter.recipient}</div>
-          <div className="text-[12px] text-ink-500 mt-1.5 font-mono">written {letter.written} · by {letter.author}</div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">{editing ? 'Editing' : letter.category}</div>
+          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">{editing ? 'Edit this letter' : `For ${letter.recipient}`}</div>
+          {!editing && <div className="text-[12px] text-ink-500 mt-1.5 font-mono">written {letter.written} · by {letter.author}</div>}
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {editable && !editing && (
+            <button onClick={() => setEditing(true)} title="Edit letter" className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.Pencil size={16} /></button>
+          )}
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
+        </div>
       </div>
-      <div className="px-6">
-        <div className={`rounded-2xl p-6 sm:p-7 relative ${toneRing[letter.tone]} ring-1`}>
-          <div className="absolute -top-2 left-6 h-5 w-16 rotate-[-3deg] bg-white/80 rounded-sm shadow-softer" />
-          <p className="font-serif-i text-[19px] leading-[1.55] text-ink-900 whitespace-pre-line" style={{textWrap:'pretty'}}>
-            {letter.body}
-          </p>
-          <div className="mt-6 flex items-center justify-between text-[12px] text-ink-500">
-            <span>— {letter.author}</span>
-            <span className="font-mono">{letter.written}</span>
+
+      {editing ? (
+        <div className="px-6 pb-6 space-y-3">
+          <div className="flex flex-wrap gap-1.5">
+            {LETTER_CATEGORIES.map(c => (
+              <Chip key={c} tone="coral" size="sm" selected={form.category === c} onClick={() => setForm(f => ({ ...f, category: c }))}>{c}</Chip>
+            ))}
+          </div>
+          <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} rows={6}
+            placeholder="Start anywhere…"
+            className="w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none leading-relaxed" />
+          <div className="grid grid-cols-2 gap-3">
+            <select value={form.recipient} onChange={e => setForm(f => ({ ...f, recipient: e.target.value }))} className={selCls}>
+              <option value={COUPLE.partner_b.name}>For {COUPLE.partner_b.name}</option>
+              <option value={COUPLE.partner_a.name}>For {COUPLE.partner_a.name}</option>
+            </select>
+            <select value={form.sealed ? 'sealed' : 'open'} onChange={e => setForm(f => ({ ...f, sealed: e.target.value === 'sealed' }))} className={selCls}>
+              <option value="sealed">Sealed</option>
+              <option value="open">Open now</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <Button kind="ghost" icon={I.Trash} onClick={del} disabled={busy} className="text-coral-600">Delete</Button>
+            <div className="flex gap-2">
+              <Button kind="ghost" type="button" onClick={() => (startEditing ? onClose() : setEditing(false))} disabled={busy}>Cancel</Button>
+              <Button kind="primary" icon={I.Check} onClick={saveEdit} disabled={busy || !form.body.trim()}>{busy ? 'saving…' : 'Save'}</Button>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-end gap-2 p-6 pt-5">
-        <Button kind="ghost" icon={I.Heart}>Save this feeling</Button>
-        <Button kind="primary" icon={I.Send}>Reply with a song</Button>
-      </div>
+      ) : (
+        <>
+          <div className="px-6">
+            <div className={`rounded-2xl p-6 sm:p-7 relative ${toneRing[letter.tone]} ring-1`}>
+              <div className="absolute -top-2 left-6 h-5 w-16 rotate-[-3deg] bg-white/80 rounded-sm shadow-softer" />
+              <p className="font-serif-i text-[19px] leading-[1.55] text-ink-900 whitespace-pre-line" style={{textWrap:'pretty'}}>
+                {letter.body}
+              </p>
+              <div className="mt-6 flex items-center justify-between text-[12px] text-ink-500">
+                <span>— {letter.author}</span>
+                <span className="font-mono">{letter.written}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 p-6 pt-5">
+            <Button kind="ghost" icon={I.Heart}>Save this feeling</Button>
+            <Button kind="primary" icon={I.Send}>Reply with a song</Button>
+          </div>
+        </>
+      )}
     </Modal>
   );
 };
-
-// author is whichever partner is NOT the recipient; tone follows their accent.
-const partnerAccent = (name) => (name === COUPLE.partner_b.name ? 'lavender' : 'coral');
-const otherPartner = (name) => (name === COUPLE.partner_a.name ? COUPLE.partner_b.name : COUPLE.partner_a.name);
 
 const AddLetterModal = ({ open, onClose, coupleId, onAdd }) => {
   const [category, setCategory] = useState(LETTER_CATEGORIES[0]);
@@ -188,23 +283,29 @@ const LettersPage = ({ coupleId }) => {
   const [letters, setLetters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reading, setReading] = useState(null);
+  const [editStart, setEditStart] = useState(false);
   const [adding, setAdding] = useState(false);
   const [tab, setTab] = useState('All');
 
-  useEffect(() => {
+  const reload = () => {
     if (!coupleId) { setLoading(false); return; }
     sbFetchLetters(coupleId).then(data => {
-      setLetters(data.length ? data : LETTERS);
+      setLetters(data);
       setLoading(false);
-    }).catch(() => { setLetters(LETTERS); setLoading(false); });
-  }, [coupleId]);
+    }).catch(() => { setLoading(false); });
+  };
+
+  useEffect(() => { reload(); }, [coupleId]);
 
   const handleAdd = (letter) => {
     setLetters(prev => [letter, ...(prev.length ? prev : [])]);
   };
+  const openRead = (l) => { setEditStart(false); setReading(l); };
+  const openManage = (l) => { setEditStart(true); setReading(l); };
 
   // All hooks before conditional return
-  const allLetters = letters.length ? letters : LETTERS;
+  const dbBacked = letters.length > 0;
+  const allLetters = dbBacked ? letters : LETTERS;
   const visible = useMemo(() => tab === 'All' ? allLetters : allLetters.filter(l => l.category === tab), [tab, allLetters]);
   const unlockedCount = allLetters.filter(l => !l.locked).length;
 
@@ -230,7 +331,7 @@ const LettersPage = ({ coupleId }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {visible.map(l => <Envelope key={l.id} l={l} onOpen={setReading} />)}
+        {visible.map(l => <Envelope key={l.id} l={l} onOpen={openRead} editable={dbBacked} onManage={openManage} />)}
         {/* add-new tile */}
         <button onClick={() => setAdding(true)} className="rounded-2xl border-2 border-dashed border-ink-900/15 hover:border-ink-900/30 p-5 flex flex-col items-center justify-center min-h-[196px] text-ink-600 hover:text-ink-900 transition-all">
           <I.Plus size={20} />
@@ -239,7 +340,14 @@ const LettersPage = ({ coupleId }) => {
         </button>
       </div>
 
-      <LetterModal letter={reading} onClose={() => setReading(null)} />
+      <LetterModal
+        letter={reading}
+        onClose={() => setReading(null)}
+        editable={dbBacked}
+        onChanged={reload}
+        startEditing={editStart}
+        coupleId={coupleId}
+      />
       <AddLetterModal open={adding} onClose={() => setAdding(false)} coupleId={coupleId} onAdd={handleAdd} />
     </div>
   );

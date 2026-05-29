@@ -118,6 +118,11 @@ const sbUpdateLetter = async (id, fields) => {
   if (error) throw error;
 };
 
+const sbDeleteLetter = async (id) => {
+  const { error } = await _sb.from('letters').delete().eq('id', id);
+  if (error) throw error;
+};
+
 /* ── Bucket list ── */
 const sbFetchBucketItems = async (coupleId) => {
   const { data, error } = await _sb
@@ -141,6 +146,16 @@ const sbAddBucketItem = async (coupleId, fields) => {
 
 const sbUpdateBucketStatus = async (id, status) => {
   const { error } = await _sb.from('bucket_items').update({ status }).eq('id', id);
+  if (error) throw error;
+};
+
+const sbUpdateBucketItem = async (id, fields) => {
+  const { error } = await _sb.from('bucket_items').update(fields).eq('id', id);
+  if (error) throw error;
+};
+
+const sbDeleteBucketItem = async (id) => {
+  const { error } = await _sb.from('bucket_items').delete().eq('id', id);
   if (error) throw error;
 };
 
@@ -222,6 +237,35 @@ const sbSaveDrawing = async (coupleId, canvasData, twist, rating) => {
   if (error) throw error;
 };
 
+/* ── Presence (real-time online status) ──
+   Realtime Presence channel per couple. Each client tracks itself under a
+   stable key (its auth user id) so multiple tabs of the same person collapse
+   to one identity. `onChange` receives the array of present user ids. No DB
+   tables involved — works on the default Realtime config. */
+const sbJoinPresence = (coupleId, userId, meta, onChange) => {
+  const channel = _sb.channel('presence:' + coupleId, {
+    config: { presence: { key: userId } },
+  });
+  const emit = () => {
+    const state = channel.presenceState();
+    onChange(Object.keys(state)); // distinct present user ids
+  };
+  channel
+    .on('presence', { event: 'sync' }, emit)
+    .on('presence', { event: 'join' }, emit)
+    .on('presence', { event: 'leave' }, emit)
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        await channel.track({ ...(meta || {}), online_at: new Date().toISOString() });
+      }
+    });
+  return channel;
+};
+
+const sbLeavePresence = (channel) => {
+  if (channel) _sb.removeChannel(channel);
+};
+
 /* ── Storage ── */
 const sbUploadPhoto = async (coupleId, memoryId, file) => {
   const ext = file.name.split('.').pop();
@@ -245,12 +289,13 @@ Object.assign(window, {
   sbSignIn, sbSignOut, sbGetSession, sbOnAuthChange,
   sbGetProfile, sbGetCouple, sbLinkPartner, sbUpdateNextVisit,
   sbFetchMemories, sbAddMemory, sbUpdateMemory, sbDeleteMemory,
-  sbFetchLetters, sbAddLetter, sbUpdateLetter,
-  sbFetchBucketItems, sbAddBucketItem, sbUpdateBucketStatus,
+  sbFetchLetters, sbAddLetter, sbUpdateLetter, sbDeleteLetter,
+  sbFetchBucketItems, sbAddBucketItem, sbUpdateBucketStatus, sbUpdateBucketItem, sbDeleteBucketItem,
   sbFetchLatestMoods, sbUpsertMood,
   sbFetchActivity, sbLogActivity,
   sbFetchSavedDates, sbSaveDate,
   sbRecordQuizAttempt,
   sbSaveDrawing,
+  sbJoinPresence, sbLeavePresence,
   sbUploadPhoto, sbGetPhotoUrl,
 });
