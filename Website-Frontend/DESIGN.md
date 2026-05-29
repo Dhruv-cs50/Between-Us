@@ -269,6 +269,7 @@ Policies: `using (couple_id = my_couple_id())` for reads, `with check` for write
 - **Auto-deploy:** Every `git push` to `main` triggers Vercel build
 - **Root directory:** `Website-Frontend` (set in Vercel project settings)
 - **Build:** None — static HTML/JS site
+- **Caching:** `vercel.json` sends `Cache-Control: no-cache, no-store, must-revalidate` for `index.html` and `/src/*` so browsers (esp. iOS Safari) always fetch fresh `.jsx` after a deploy. Without it, the separately-loaded script files get cached hard and users see stale code after a push.
 
 ---
 

@@ -38,6 +38,7 @@ Opens directly into the app dashboard. No marketing page. No public access.
 .gitignore            ← repo root — ignores .DS_Store, .playwright-mcp/
 CLAUDE.md             ← repo root — this project guide
 Website-Frontend/
+  vercel.json         ← no-cache headers for index.html + src/*.jsx (prevents stale-cache bugs)
   index.html          ← Tailwind config, global CSS, script load order
   DESIGN.md           ← Full design spec
   src/
