@@ -35,6 +35,8 @@ Opens directly into the app dashboard. No marketing page. No public access.
 ## File Structure
 
 ```
+.gitignore            ← repo root — ignores .DS_Store, .playwright-mcp/
+CLAUDE.md             ← repo root — this project guide
 Website-Frontend/
   index.html          ← Tailwind config, global CSS, script load order
   DESIGN.md           ← Full design spec

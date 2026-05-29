@@ -24,6 +24,7 @@
 - **No real backend yet.** All content lives in `src/data.jsx` as mock data, *intentionally shaped to map onto a future Supabase schema* (tables: `couple`, `mood_checkins`, `memories`, `quiz_questions`, `quiz_attempts`, `drawings`, `photo_challenges`, `activity`, etc.).
 
 ### File structure
+> Repo root (one level above) holds `.gitignore` (ignores `.DS_Store`, `.playwright-mcp/`) and `CLAUDE.md`. Vercel root dir is `Website-Frontend/`, shown below.
 ```
 index.html          ← entry: Tailwind config, global CSS, font + script loads
 src/
