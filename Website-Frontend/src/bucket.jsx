@@ -44,31 +44,74 @@ const BucketRow = ({ item, onCycle }) => {
   );
 };
 
-const AddBucketModal = ({ open, onClose }) => (
-  <Modal open={open} onClose={onClose} maxW="max-w-lg">
-    <div className="flex items-start justify-between mb-5">
-      <div>
-        <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Add to bucket list (mock)</div>
-        <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">A new someday</div>
+const AddBucketModal = ({ open, onClose, coupleId, onAdd }) => {
+  const [title, setTitle] = useState('');
+  const [section, setSection] = useState(BUCKET_SECTIONS[0]);
+  const [note, setNote] = useState('');
+  const [status, setStatus] = useState('Dreaming');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) { setTitle(''); setNote(''); setSection(BUCKET_SECTIONS[0]); setStatus('Dreaming'); }
+  }, [open]);
+
+  const save = async () => {
+    if (!title.trim()) return;
+    setSaving(true);
+    const fields = { title: title.trim(), section, note: note.trim(), status, addedBy: 'Dhruv' };
+    if (coupleId) {
+      const saved = await sbAddBucketItem(coupleId, fields).catch(() => null);
+      onAdd(saved || { ...fields, id: String(Date.now()) });
+    } else {
+      onAdd({ ...fields, id: String(Date.now()) });
+    }
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} maxW="max-w-lg">
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Add to bucket list</div>
+          <div className="font-serif-i text-3xl text-ink-900 leading-tight mt-1">A new someday</div>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
       </div>
-      <button onClick={onClose} className="p-1.5 rounded-full hover:bg-cream-200 text-ink-600"><I.X size={18} /></button>
-    </div>
-    <div className="space-y-3">
-      <input placeholder="e.g. Watch a meteor shower somewhere quiet" className="w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]" />
-      <div className="flex flex-wrap gap-1.5">
-        {BUCKET_SECTIONS.map(s => <Chip key={s} tone={SECTION_TONES[s] || 'cream'} size="sm">{s}</Chip>)}
+      <div className="space-y-3">
+        <input
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="e.g. Watch a meteor shower somewhere quiet"
+          className="w-full h-11 px-3.5 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px]"
+        />
+        <div className="flex flex-wrap gap-1.5">
+          {BUCKET_SECTIONS.map(s => (
+            <Chip key={s} tone={SECTION_TONES[s] || 'cream'} size="sm" selected={section === s} onClick={() => setSection(s)}>{s}</Chip>
+          ))}
+        </div>
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value)}
+          rows={3}
+          placeholder="A note for future us…"
+          className="w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none"
+        />
+        <div className="flex flex-wrap gap-1.5">
+          {BUCKET_STATUSES.map(s => (
+            <Chip key={s} tone={STATUS_TONES[s].chip} size="sm" selected={status === s} onClick={() => setStatus(s)}>{s}</Chip>
+          ))}
+        </div>
       </div>
-      <textarea rows={3} placeholder="A note for future us…" className="w-full px-3.5 py-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[14px] resize-none" />
-      <div className="flex flex-wrap gap-1.5">
-        {BUCKET_STATUSES.map(s => <Chip key={s} tone={STATUS_TONES[s].chip} size="sm">{s}</Chip>)}
+      <div className="flex items-center justify-end gap-2 mt-5">
+        <Button kind="ghost" onClick={onClose}>Cancel</Button>
+        <Button kind="primary" icon={I.Plus} onClick={save} disabled={!title.trim() || saving}>
+          {saving ? 'Adding…' : 'Add to list'}
+        </Button>
       </div>
-    </div>
-    <div className="flex items-center justify-end gap-2 mt-5">
-      <Button kind="ghost" onClick={onClose}>Cancel</Button>
-      <Button kind="primary" icon={I.Plus} onClick={onClose}>Add to list</Button>
-    </div>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 const BucketList = ({ coupleId }) => {
   const [items, setItems] = useState([]);
@@ -178,7 +221,12 @@ const BucketList = ({ coupleId }) => {
         </div>
       )}
 
-      <AddBucketModal open={adding} onClose={() => setAdding(false)} />
+      <AddBucketModal
+        open={adding}
+        onClose={() => setAdding(false)}
+        coupleId={coupleId}
+        onAdd={(item) => setItems(prev => [item, ...prev])}
+      />
     </div>
   );
 };

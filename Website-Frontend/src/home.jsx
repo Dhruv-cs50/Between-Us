@@ -2,6 +2,37 @@
 
 const dayMs = 86_400_000;
 
+const relTime = (iso) => {
+  if (!iso) return null;
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+};
+
+const transformActivity = (row) => {
+  const typeMap = {
+    quiz:  { kind: 'quiz',  what: 'played a quiz round' },
+    draw:  { kind: 'draw',  what: 'drew a future home' },
+    photo: { kind: 'photo', what: 'guessed a blurred photo' },
+    mood:  { kind: 'miss',  what: 'checked in a mood' },
+    miss:  { kind: 'miss',  what: 'sent "I miss you"' },
+    date:  { kind: 'date',  what: 'picked a date night' },
+  };
+  const t = typeMap[row.type] || { kind: 'miss', what: row.type };
+  const who = row.who ? row.who.charAt(0).toUpperCase() + row.who.slice(1) : 'Someone';
+  const meta = row.payload?.mood || row.payload?.meta || row.payload?.score || '';
+  return {
+    id: row.id || `${row.type}-${row.created_at}`,
+    who,
+    what: t.what,
+    meta: typeof meta === 'string' ? meta : '',
+    when: relTime(row.created_at) || 'recently',
+    kind: t.kind,
+  };
+};
+
 const useCountdown = (iso) => {
   const target = useMemo(() => new Date(iso).getTime(), [iso]);
   const [now, setNow] = useState(Date.now());
@@ -43,16 +74,10 @@ const MoodCheckIn = ({ coupleId }) => {
     setMoods(prev => ({ ...prev, [who]: { mood: m, checked_at: now } }));
     setSaved(s => ({ ...s, [who]: true }));
     setTimeout(() => setSaved(s => ({ ...s, [who]: false })), 1500);
-    if (coupleId) sbUpsertMood(coupleId, who, m).catch(() => {});
-  };
-
-  const relTime = (iso) => {
-    if (!iso) return null;
-    const diff = Date.now() - new Date(iso).getTime();
-    if (diff < 60000) return 'just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return `${Math.floor(diff / 86400000)}d ago`;
+    if (coupleId) {
+      sbUpsertMood(coupleId, who, m).catch(() => {});
+      sbLogActivity(coupleId, 'mood', who, { mood: m }).catch(() => {});
+    }
   };
 
   const MoodSkeleton = () => (
@@ -138,16 +163,29 @@ const MoodCheckIn = ({ coupleId }) => {
 const SFO_BLR_MILES = 8726;
 const MILESTONES = [2000, 3000, 5000, 10000];
 
-const CountdownCard = () => {
-  const isTBD = !COUPLE.next_visit;
-  const c = useCountdown(COUPLE.next_visit || Date.now());
-  const daysTogether = Math.floor((Date.now() - new Date(COUPLE.anniversary).getTime()) / dayMs);
-  const target = COUPLE.next_visit ? new Date(COUPLE.next_visit) : null;
+const CountdownCard = ({ nextVisit, anniversary, coupleId, onDateUpdate }) => {
+  const [picking, setPicking] = useState(false);
+  const [dateInput, setDateInput] = useState(‘’);
+  const [saving, setSaving] = useState(false);
+
+  const isTBD = !nextVisit;
+  const c = useCountdown(nextVisit || Date.now());
+  const daysTogether = Math.floor((Date.now() - new Date(anniversary).getTime()) / dayMs);
+  const target = nextVisit ? new Date(nextVisit) : null;
   const nextMilestoneTarget = MILESTONES.find(m => m > daysTogether) || null;
   const nextMilestoneDays = nextMilestoneTarget ? nextMilestoneTarget - daysTogether : null;
   const targetLabel = isTBD ?
-  'still cooking — a date we’ll pick together' :
-  target.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  "still cooking — a date we’ll pick together" :
+  target.toLocaleDateString(‘en-US’, { weekday: ‘long’, month: ‘long’, day: ‘numeric’ });
+
+  const handleSetDate = async () => {
+    if (!dateInput || !onDateUpdate) return;
+    setSaving(true);
+    await onDateUpdate(dateInput).catch(() => {});
+    setSaving(false);
+    setPicking(false);
+    setDateInput(‘’);
+  };
   const unit = (n, label) =>
   <div className="text-center">
       <div className="font-serif-i text-5xl sm:text-6xl text-ink-900 leading-none tabular-nums">{String(n).padStart(2, '0')}</div>
@@ -173,7 +211,23 @@ const CountdownCard = () => {
               <div className="font-serif-i text-[34px] sm:text-[42px] text-ink-900 leading-none">soon <span aria-label="wink" role="img">😉</span></div>
               <div className="text-[13px] text-ink-500 mt-2">when we pick a date, the countdown starts. Until then, it’s vibes.</div>
             </div>
-            <Button kind="outline" icon={I.Calendar}>Pick a date</Button>
+            {picking ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="date"
+                  value={dateInput}
+                  onChange={e => setDateInput(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="h-10 px-3 rounded-xl bg-white ring-1 ring-ink-900/10 focus:ring-2 focus:ring-coral-400/40 outline-none text-[13px]"
+                />
+                <Button kind="coral" size="sm" onClick={handleSetDate} disabled={!dateInput || saving}>
+                  {saving ? 'Saving…' : 'Set'}
+                </Button>
+                <Button kind="ghost" size="sm" onClick={() => { setPicking(false); setDateInput(''); }}>Cancel</Button>
+              </div>
+            ) : (
+              <Button kind="outline" icon={I.Calendar} onClick={() => setPicking(true)}>Pick a date</Button>
+            )}
           </div> :
 
         <div className="grid grid-cols-4 gap-2 mt-6 sm:mt-7">
@@ -341,7 +395,7 @@ const ActivityHistory = ({ coupleId }) => {
   const [items, setItems] = useState(null); // null = loading
   useEffect(() => {
     if (!coupleId) { setItems([]); return; }
-    sbFetchActivity(coupleId).then(data => setItems(data)).catch(() => setItems([]));
+    sbFetchActivity(coupleId).then(data => setItems(data.map(transformActivity))).catch(() => setItems([]));
   }, [coupleId]);
   return (
   <Surface className="p-5">
@@ -382,7 +436,18 @@ const MissYouButton = () => {
 };
 
 /* — The whole Home page — */
-const HomeDashboard = ({ go, coupleId }) => {
+const HomeDashboard = ({ go, coupleId, couple }) => {
+  const [nextVisitOverride, setNextVisitOverride] = useState(null);
+
+  const handleDateUpdate = async (date) => {
+    if (!coupleId) return;
+    await sbUpdateNextVisit(coupleId, date);
+    setNextVisitOverride(date);
+  };
+
+  const nextVisit = nextVisitOverride ?? couple?.next_visit ?? COUPLE.next_visit;
+  const anniversary = couple?.anniversary || COUPLE.anniversary;
+
   return (
     <div className="space-y-7 fade-up">
       {/* Greeting block */}
@@ -407,7 +472,7 @@ const HomeDashboard = ({ go, coupleId }) => {
 
       {/* Top row: countdown wide, soundtrack right */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2"><CountdownCard /></div>
+        <div className="lg:col-span-2"><CountdownCard nextVisit={nextVisit} anniversary={anniversary} coupleId={coupleId} onDateUpdate={handleDateUpdate} /></div>
         <div className="space-y-5"><MusicCard /><LatestMemory onOpen={() => go('memories')} /></div>
       </div>
 
