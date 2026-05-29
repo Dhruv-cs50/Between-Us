@@ -225,25 +225,23 @@ const MemoriesTimeline = ({ coupleId }) => {
 
   useEffect(() => { reload(); }, [coupleId]);
 
-  if (loading) return <PageSkeleton rows={5} />;
-
+  // All hooks before any conditional return
   const allMemories = memories.length ? memories : MEMORIES;
-
   const filtered = useMemo(() => {
     return tag === 'All' ? allMemories : allMemories.filter(m => (m.tags || []).includes(tag));
   }, [tag, allMemories]);
-
-  const ordered = [...filtered].sort((a, b) => {
+  const ordered = useMemo(() => [...filtered].sort((a, b) => {
     if (a.date === 'Someday') return 1; if (b.date === 'Someday') return -1;
     return new Date(b.date) - new Date(a.date);
-  });
+  }), [filtered]);
+  const displayFeatured = featured || allMemories[0];
 
   const shuffle = () => {
     const pool = allMemories.filter(m => m.date !== 'Someday');
     setFeatured(pool[Math.floor(Math.random() * pool.length)]);
   };
 
-  const displayFeatured = featured || allMemories[0];
+  if (loading) return <PageSkeleton rows={5} />;
 
   return (
     <div className="space-y-6 fade-up">

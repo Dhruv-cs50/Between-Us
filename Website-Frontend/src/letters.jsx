@@ -138,11 +138,12 @@ const LettersPage = ({ coupleId }) => {
     }).catch(() => { setLetters(LETTERS); setLoading(false); });
   }, [coupleId]);
 
-  if (loading) return <PageSkeleton rows={4} />;
-
+  // All hooks before conditional return
   const allLetters = letters.length ? letters : LETTERS;
   const visible = useMemo(() => tab === 'All' ? allLetters : allLetters.filter(l => l.category === tab), [tab, allLetters]);
   const unlockedCount = allLetters.filter(l => !l.locked).length;
+
+  if (loading) return <PageSkeleton rows={4} />;
 
   return (
     <div className="space-y-6 fade-up">
