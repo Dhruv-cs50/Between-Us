@@ -214,7 +214,7 @@ const DrawingGame = ({ coupleId }) => {
 
   /* ── ready / playing ── */
   return (
-    <div className="fade-up flex flex-col gap-6 lg:overflow-hidden" style={{ height: 'calc(100vh - 260px)', minHeight: 560 }}>
+    <div className="fade-up flex flex-col gap-6" style={{ height: 'calc(100vh - 260px)', minHeight: 560, overflow: 'hidden' }}>
       <SectionHeader
         eyebrow="Game 02"
         title="Future Home, Badly Drawn"
@@ -226,7 +226,7 @@ const DrawingGame = ({ coupleId }) => {
         }
       />
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-5 min-h-0 lg:overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-5 min-h-0" style={{ overflow: 'hidden' }}>
         {/* Canvas — flex column so canvas stretches to fill */}
         <Surface className="p-4 sm:p-5 flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap shrink-0">
