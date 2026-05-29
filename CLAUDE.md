@@ -150,14 +150,18 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 ### High priority
 - **Seed real data** — memories, letters, bucket items need to be inserted into Supabase (currently showing static fallback data)
 - **Add Anjali's account** — create in Supabase dashboard → she signs in → Settings → paste Dhruv's invite code to link
-- **Fix Spotify track IDs** — default IDs in `data.jsx` are placeholder guesses. Use Edit Library modal (pencil icon on music card) to paste real Spotify links
+- **Fix Spotify track IDs** — default IDs in `music.jsx` are placeholder guesses. Use Edit Library modal (pencil icon on music card) to paste real Spotify track/playlist links. Saves to localStorage.
 
 ### Medium priority
-- **`next_visit` date** — currently null (shows "soon 😉"). Update via `sbUpdateNextVisit` or directly in Supabase `couples` table
 - **Real photos** — add to memories via "Add memory" modal, or bulk upload to `photos/{couple_id}/` bucket in Supabase Storage and update `img_path` on memory rows
 - **Blurred Photo game** — still uses static photo challenge data. Could be seeded with real photos
-- **Activity feed** — shows "nothing yet" until real interactions happen (quiz attempts, mood check-ins, etc.)
-- ~~**Empty space below "Days together" stat**~~ — ✅ Fixed: added distance + milestone strip inside CountdownCard. Shows SFO↔BLR distance (8,726 mi) and days to next milestone (2k/3k/5k/10k days together).
+
+### Resolved (no longer to-do)
+- ~~`next_visit` date~~: "Pick a date" button in countdown card now opens inline date picker → calls `sbUpdateNextVisit` directly
+- ~~Activity feed "nothing yet"~~: activity transform fixed (DB rows now map to UI shape); mood check-ins now log to `activity` table
+- ~~Empty space below "Days together"~~: distance + milestone strip added
+- ~~Bucket list add is mock~~: AddBucketModal now saves to Supabase via `sbAddBucketItem`
+- ~~favicon.ico 404~~: SVG favicon (coral+lavender circles) added to index.html
 
 ### Nice to have / future
 - Real-time sync (Supabase subscriptions) so both see each other's mood updates live
