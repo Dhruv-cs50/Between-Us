@@ -165,7 +165,7 @@ const MILESTONES = [2000, 3000, 5000, 10000];
 
 const CountdownCard = ({ nextVisit, anniversary, coupleId, onDateUpdate }) => {
   const [picking, setPicking] = useState(false);
-  const [dateInput, setDateInput] = useState(‘’);
+  const [dateInput, setDateInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const isTBD = !nextVisit;
@@ -176,7 +176,7 @@ const CountdownCard = ({ nextVisit, anniversary, coupleId, onDateUpdate }) => {
   const nextMilestoneDays = nextMilestoneTarget ? nextMilestoneTarget - daysTogether : null;
   const targetLabel = isTBD ?
   "still cooking — a date we’ll pick together" :
-  target.toLocaleDateString(‘en-US’, { weekday: ‘long’, month: ‘long’, day: ‘numeric’ });
+  target.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   const handleSetDate = async () => {
     if (!dateInput || !onDateUpdate) return;
@@ -184,7 +184,7 @@ const CountdownCard = ({ nextVisit, anniversary, coupleId, onDateUpdate }) => {
     await onDateUpdate(dateInput).catch(() => {});
     setSaving(false);
     setPicking(false);
-    setDateInput(‘’);
+    setDateInput('');
   };
   const unit = (n, label) =>
   <div className="text-center">

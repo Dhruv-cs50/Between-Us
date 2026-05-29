@@ -116,7 +116,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Body: Geist `font-sans`, 13–15px
 - Labels: Geist Mono `font-mono`, uppercase, `tracking-[0.14em]`, 11px, ink-500
 
-**Key gotcha:** Never use curly/smart quotes (`'` `'`) inside JSX attribute expressions `{}` — Babel rejects them. Use straight quotes only. Curly quotes in JSX text content (not attributes) are fine.
+**Key gotcha:** Never use curly/smart quotes (`'` `'`) as a JS string delimiter — not inside JSX attribute expressions `{}` *and not in plain JS code* (`useState('')`, `toLocaleDateString('en-US', …)`). Babel rejects them with a SyntaxError that kills the whole script tag. Use straight quotes only. Curly quotes inside JSX text content or already-straight-quoted strings are fine. Validate before commit: `Babel.transform(code, { presets: ['react'] })` over `src/*.jsx`.
 
 ---
 
@@ -165,6 +165,9 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Anjali being able to write and seal her own letters through the UI
 - Add/edit memories from the memory modal (currently read-only after creation)
 - Mobile PWA (add to home screen)
+
+### Resolved this session (2026-05-29 cont.)
+- ~~Home page blank / crash~~: 3 curly-quote string delimiters in `home.jsx` `CountdownCard` (`useState(‘’)`, `toLocaleDateString(‘en-US’…)`, `setDateInput(‘’)`) threw a Babel SyntaxError. Replaced with straight quotes. All 15 `src/*.jsx` now transpile clean; app loads with 0 console errors.
 
 ### Resolved this session (2026-05-29)
 - ~~`next_visit` date~~: "Pick a date" button opens inline date picker, calls `sbUpdateNextVisit`. CountdownCard now uses live `couple.next_visit` / `couple.anniversary` from Supabase.

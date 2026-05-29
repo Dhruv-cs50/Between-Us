@@ -210,7 +210,7 @@ Key exports (all on `window`):
 7. **Never** call `useMemo`/`useEffect`/`useState` after a conditional `return`. Declare all hooks first.
 8. **Always** use `ReactDOM.createPortal(content, document.body)` for modals — CSS animations leave transforms on ancestors that trap `fixed` elements.
 9. Avoid `date` as a PostgREST column name in `.order()` — it's a reserved word and causes 400 errors.
-10. In JSX attribute expressions `{}`, use straight quotes only. Curly/smart quotes `'` `'` break Babel.
+10. Use straight quotes only **anywhere a quote delimits a JS string** — inside JSX attribute expressions `{}` *and* in plain JS code (`useState('')`, `toLocaleDateString('en-US', …)`). Curly/smart quotes `'` `'` are not valid JS string delimiters and throw a Babel SyntaxError that kills the whole script tag. They are only safe inside JSX *text content* or already-straight-quoted strings. Editors that auto-"smarten" quotes are the usual culprit. Validate with `Babel.transform(code, { presets: ['react'] })` over `src/*.jsx` before commit.
 11. Mobile-first: hit targets ≥44px, bottom nav has safe-area padding.
 12. **Viewport-fit pages** (canvas, games): use `style={{ height: 'calc(100vh - 260px)', overflow: 'hidden' }}` on outer container + `flex-1 min-h-0` on grid + `flex flex-col min-h-0` on Surface. Use inline `style` not Tailwind for overflow — Tailwind CDN class scanning can miss `overflow-hidden` on dynamically-rendered JSX.
 13. **Activity feed** rows coming from Supabase need `transformActivity(row)` (in `home.jsx`) to map `{ type, who, payload, created_at }` → `{ kind, who, what, meta, when }`. Log events via `sbLogActivity(coupleId, type, who, payload)`.
