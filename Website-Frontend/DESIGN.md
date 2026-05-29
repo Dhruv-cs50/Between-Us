@@ -151,6 +151,8 @@ Dashboard, no hero. Sections, top to bottom:
 ### Future Home / Drawing (`drawing.jsx`)
 60-second drawing game on a `<canvas>`. Random **twist** prompts (`DRAW_TWISTS`, e.g. "add a tiny kitchen") and snarky **ratings** (`DRAW_RATINGS`, e.g. "zoning violation, but cute"). Tools include pencil/eraser/undo/trash (icons exist).
 
+**Layout:** Page fits the viewport without scrolling. Outer container uses `height: calc(100vh - 260px); overflow: hidden`. Grid is `flex-1 min-h-0` inside a flex-col. Canvas wrapper is `flex-1 min-h-0` inside a flex-col Surface. `setupCanvas` uses `rect.height` when the wrapper has CSS height (flex-stretched), falling back to `width * 0.6` aspect ratio otherwise. `requestAnimationFrame` defers the initial setup so flex layout settles first. Side panel (`min-h-0; overflow-y-auto`) scrolls internally so Twist Prompts never pushes the page taller.
+
 ### Blurred Photo (`blurred.jsx`)
 "Guess the Blurred Photo." 4 challenges (`PHOTO_CHALLENGES`), each a gradient `PhotoBlock` (blurred), with `hint`, multiple-choice `options`, `correct`, and a tender `note` revealed after.
 
@@ -164,7 +166,7 @@ Spinner wheel across 7 categories: **Talk, Game, Create, Food, Music, Memory, Fu
 Tagged timeline. Tags: **Calls, Visits, Firsts, Funny, Hard Moments, Future, Music**. Each memory has date, title, location, note, optional `song`, a `bg` gradient, and a `spotify` field (null now — meant to be set via UI and persisted to localStorage). Includes a "Someday / TBD" future placeholder memory.
 
 ### Bucket List (`bucket.jsx`)
-6 sections: **Places to go, Food to try, Little rituals, Future home, Songs to share, Silly goals**. Each item: title, `addedBy` (Dhruv/Anjali/Both), `status` (**Dreaming → Planned → Done**), note.
+6 sections: **Places to go, Food to try, Little rituals, Future home, Songs to share, Silly goals**. Each item: title, `addedBy` (Dhruv/Anjali/Both), `status` (**Dreaming → Planned → Done**), note. **"Add to list" modal is fully wired** — controlled title/section/note/status inputs, saves via `sbAddBucketItem`, optimistic UI update via `onAdd` callback. Cycle-status button calls `sbUpdateBucketStatus` live.
 
 ### Settings (`settings.jsx`)
 Account / couple settings.
@@ -210,6 +212,9 @@ Key exports (all on `window`):
 9. Avoid `date` as a PostgREST column name in `.order()` — it's a reserved word and causes 400 errors.
 10. In JSX attribute expressions `{}`, use straight quotes only. Curly/smart quotes `'` `'` break Babel.
 11. Mobile-first: hit targets ≥44px, bottom nav has safe-area padding.
+12. **Viewport-fit pages** (canvas, games): use `style={{ height: 'calc(100vh - 260px)', overflow: 'hidden' }}` on outer container + `flex-1 min-h-0` on grid + `flex flex-col min-h-0` on Surface. Use inline `style` not Tailwind for overflow — Tailwind CDN class scanning can miss `overflow-hidden` on dynamically-rendered JSX.
+13. **Activity feed** rows coming from Supabase need `transformActivity(row)` (in `home.jsx`) to map `{ type, who, payload, created_at }` → `{ kind, who, what, meta, when }`. Log events via `sbLogActivity(coupleId, type, who, payload)`.
+14. **`sbFetchLatestMoods`** returns `{ who: { mood, checked_at } }` objects (not flat strings). Any consumer must destructure `.mood` and `.checked_at`.
 
 ---
 

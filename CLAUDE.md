@@ -147,7 +147,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 
 ## What Still Needs Doing
 
-### High priority
+### High priority (needs user action)
 - **Seed real data** — memories, letters, bucket items need to be inserted into Supabase (currently showing static fallback data)
 - **Add Anjali's account** — create in Supabase dashboard → she signs in → Settings → paste Dhruv's invite code to link
 - **Fix Spotify track IDs** — default IDs in `music.jsx` are placeholder guesses. Use Edit Library modal (pencil icon on music card) to paste real Spotify track/playlist links. Saves to localStorage.
@@ -155,16 +155,7 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 ### Medium priority
 - **Real photos** — add to memories via "Add memory" modal, or bulk upload to `photos/{couple_id}/` bucket in Supabase Storage and update `img_path` on memory rows
 - **Blurred Photo game** — still uses static photo challenge data. Could be seeded with real photos
-
-### Resolved (no longer to-do)
-- ~~`next_visit` date~~: "Pick a date" button in countdown card now opens inline date picker → calls `sbUpdateNextVisit` directly
-- ~~Activity feed "nothing yet"~~: activity transform fixed (DB rows now map to UI shape); mood check-ins now log to `activity` table
-- ~~Empty space below "Days together"~~: distance + milestone strip added
-- ~~Bucket list add is mock~~: AddBucketModal now saves to Supabase via `sbAddBucketItem`
-- ~~favicon.ico 404~~: SVG favicon (coral+lavender circles) added to index.html
-
-### Medium priority
-- ~~**Future Home page layout**~~ — ✅ Fixed: page now fits viewport height. Grid uses `h-[calc(100vh-260px)]`, canvas flex-fills remaining height, side panel scrolls internally.
+- **Letters write** — AddLetterModal UI exists but is not wired to Supabase. `sbAddLetter` helper not yet written.
 
 ### Nice to have / future
 - Real-time sync (Supabase subscriptions) so both see each other's mood updates live
@@ -174,6 +165,15 @@ Never put `useMemo` / `useEffect` / `useState` after a conditional `return`. All
 - Anjali being able to write and seal her own letters through the UI
 - Add/edit memories from the memory modal (currently read-only after creation)
 - Mobile PWA (add to home screen)
+
+### Resolved this session (2026-05-29)
+- ~~`next_visit` date~~: "Pick a date" button opens inline date picker, calls `sbUpdateNextVisit`. CountdownCard now uses live `couple.next_visit` / `couple.anniversary` from Supabase.
+- ~~Activity feed "nothing yet"~~: `transformActivity` maps DB rows (`type/who/payload/created_at`) to `ActivityRow` shape (`kind/who/what/meta/when`). Mood check-ins log to `activity` table via `sbLogActivity`.
+- ~~Empty space below "Days together"~~: distance + milestone strip (8,726 mi · always + days to 2k/3k/5k/10k).
+- ~~Bucket list add is mock~~: `AddBucketModal` is stateful with controlled inputs, saves via `sbAddBucketItem`.
+- ~~favicon.ico 404~~: inline SVG favicon (coral + lavender overlapping circles).
+- ~~Mood check-in no UX~~: emoji in chips, loading skeleton, relative timestamps, ✓ save flash.
+- ~~Future Home page overflows viewport~~: `height: calc(100vh-260px)` + `overflow:hidden` container, canvas flex-fills height, side panel scrolls internally.
 
 ---
 
