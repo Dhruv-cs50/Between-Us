@@ -22,12 +22,12 @@ const toneStamp = {
 const Envelope = ({ l, onOpen }) => (
   <button
     onClick={() => !l.locked && onOpen(l)}
-    className={`group relative text-left rounded-2xl ring-1 transition-all overflow-hidden ${toneRing[l.tone]} hover:-translate-y-0.5 hover:shadow-soft`}
+    className={`group relative text-left rounded-2xl ring-1 transition-all overflow-hidden ${toneRing[l.tone] || toneRing.coral} hover:-translate-y-0.5 hover:shadow-soft`}
     style={{ minHeight: 196 }}
   >
     {/* Envelope flap */}
     <svg viewBox="0 0 200 80" className="absolute top-0 left-0 right-0 w-full h-20 pointer-events-none" preserveAspectRatio="none">
-      <path d="M0,0 L100,55 L200,0 L200,80 L0,80 Z" fill={toneFlap[l.tone]} />
+      <path d="M0,0 L100,55 L200,0 L200,80 L0,80 Z" fill={toneFlap[l.tone] || toneFlap.coral} />
       <path d="M0,0 L100,55 L200,0" fill="none" stroke="rgba(28,24,20,0.06)" />
     </svg>
     {/* Wax / stamp */}

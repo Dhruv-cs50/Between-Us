@@ -132,32 +132,43 @@ const CountdownCard = () => {
 
 };
 
-/* — Tonight's tiny date — */
-const TonightDateCard = ({ onStart }) =>
-<Surface className="p-5 relative overflow-hidden">
+/* — Tonight’s tiny date — */
+const TonightDateCard = ({ onStart }) => {
+  const [date, setDate] = useState(TONIGHT_DATE);
+  const spin = () => {
+    const pool = DATE_IDEAS || [];
+    if (!pool.length) return;
+    let next;
+    do { next = pool[Math.floor(Math.random() * pool.length)]; } while (pool.length > 1 && next.id === date.id);
+    setDate({ title: next.title, duration: next.duration, vibe: next.mood, steps: next.steps });
+  };
+  return (
+  <Surface className="p-5 relative overflow-hidden">
     <div className="absolute -right-16 -bottom-16 w-48 h-48 rounded-full opacity-[0.35] pointer-events-none"
-  style={{ background: 'radial-gradient(closest-side, #DCE7DD, transparent 70%)' }} />
+      style={{ background: ‘radial-gradient(closest-side, #DCE7DD, transparent 70%)’ }} />
     <div className="relative">
       <div className="flex items-center justify-between gap-3">
         <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">Tonight’s tiny date</div>
-        <Chip tone="sage" size="sm">{TONIGHT_DATE.vibe}</Chip>
+        <Chip tone="sage" size="sm">{date.vibe}</Chip>
       </div>
-      <div className="font-serif-i text-3xl text-ink-900 leading-[1.1] mt-2.5">{TONIGHT_DATE.title}</div>
-      <div className="text-[13px] text-ink-500 mt-2">{TONIGHT_DATE.duration}</div>
+      <div className="font-serif-i text-3xl text-ink-900 leading-[1.1] mt-2.5">{date.title}</div>
+      <div className="text-[13px] text-ink-500 mt-2">{date.duration}</div>
       <ol className="mt-4 space-y-2">
-        {TONIGHT_DATE.steps.map((s, i) =>
-      <li key={i} className="flex gap-2.5 text-[13.5px] text-ink-700">
+        {(date.steps || []).map((s, i) =>
+          <li key={i} className="flex gap-2.5 text-[13.5px] text-ink-700">
             <span className="font-mono text-[10px] mt-1 text-ink-400 tabular-nums">0{i + 1}</span>
             <span>{s}</span>
           </li>
-      )}
+        )}
       </ol>
       <div className="mt-5 flex items-center gap-2">
         <Button kind="primary" icon={I.Play} onClick={onStart}>Start tonight’s date</Button>
-        <Button kind="ghost" size="md" icon={I.Shuffle}>Spin again</Button>
+        <Button kind="ghost" size="md" icon={I.Shuffle} onClick={spin}>Spin again</Button>
       </div>
     </div>
-  </Surface>;
+  </Surface>
+  );
+};
 
 
 /* — Latest memory preview — */
@@ -246,10 +257,10 @@ const ActivityRow = ({ a }) => {
 };
 
 const ActivityHistory = ({ coupleId }) => {
-  const [items, setItems] = useState(ACTIVITY);
+  const [items, setItems] = useState(null); // null = loading
   useEffect(() => {
-    if (!coupleId) return;
-    sbFetchActivity(coupleId).then(data => { if (data.length) setItems(data); }).catch(() => {});
+    if (!coupleId) { setItems([]); return; }
+    sbFetchActivity(coupleId).then(data => setItems(data)).catch(() => setItems([]));
   }, [coupleId]);
   return (
   <Surface className="p-5">
@@ -260,9 +271,16 @@ const ActivityHistory = ({ coupleId }) => {
       </div>
       <Chip size="sm" tone="ink">last 7 days</Chip>
     </div>
-    <ul className="divide-y divide-ink-900/[0.05] -mx-1 px-1 mt-1">
-      {items.map((a) => <ActivityRow key={a.id} a={a} />)}
-    </ul>
+    {!items || items.length === 0 ? (
+      <div className="py-6 text-center">
+        <div className="font-serif-i text-xl text-ink-400">nothing yet</div>
+        <p className="text-[13px] text-ink-500 mt-1">play a game, check in a mood — it'll show up here.</p>
+      </div>
+    ) : (
+      <ul className="divide-y divide-ink-900/[0.05] -mx-1 px-1 mt-1">
+        {items.map((a) => <ActivityRow key={a.id} a={a} />)}
+      </ul>
+    )}
   </Surface>
   );
 };

@@ -31,7 +31,7 @@ const MemoryModal = ({ m, onClose }) => {
           <p className="text-[14px] text-ink-700 mt-3 leading-relaxed" style={{textWrap:'pretty'}}>{m.note}</p>
 
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {m.tags.map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
+            {(m.tags || []).map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
           </div>
 
           {/* Music for this memory */}
@@ -97,7 +97,7 @@ const MemCard = ({ m, align = 'left', onOpen }) => (
         <div className="text-[12px] text-ink-500 mt-1 inline-flex items-center gap-1.5"><I.Pin size={11} /> {m.location}</div>
         <p className="text-[13px] text-ink-700 mt-2 line-clamp-2" style={{textWrap:'pretty'}}>{m.note}</p>
         <div className="mt-2.5 flex flex-wrap gap-1.5 items-center">
-          {m.tags.map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
+          {(m.tags || []).map(t => <Chip key={t} size="sm" tone={t === 'Music' ? 'lavender' : t === 'Funny' ? 'butter' : t === 'Hard Moments' ? 'coral' : t === 'Future' ? 'sage' : 'cream'}>{t}</Chip>)}
           {m.song && <span className="inline-flex items-center gap-1 text-[12px] text-ink-500 italic"><I.Music size={11} /> {m.song}</span>}
         </div>
         <div className="mt-3 inline-flex items-center gap-1 text-[12px] text-ink-500 group-hover:text-ink-800">

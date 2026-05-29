@@ -156,7 +156,7 @@ const DrawingGame = ({ coupleId }) => {
           sub="Architecturally questionable. Emotionally accurate."
           right={<Button kind="outline" icon={I.Play} onClick={tryAgain}>Try again</Button>}
         />
-        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr,1fr] gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr,1fr] gap-5">
           <Surface className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 font-medium">drawn by Dhruv · 60s</div>
@@ -225,7 +225,7 @@ const DrawingGame = ({ coupleId }) => {
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr,300px] gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-5">
         {/* Canvas */}
         <Surface className="p-4 sm:p-5">
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">

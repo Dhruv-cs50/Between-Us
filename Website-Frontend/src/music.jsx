@@ -286,7 +286,6 @@ const MusicCard = () => {
   const [pickIdx, setPickIdx] = useState(0);
   const [playlistIdx, setPlaylistIdx] = useState(0);
   const [editing, setEditing] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
 
   // Whatever's currently playing
   const current = useMemo(() => {
@@ -394,27 +393,10 @@ const MusicCard = () => {
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Button kind="primary" size="sm" icon={I.Sparkle} onClick={surprise}>Pick a song for us</Button>
-          <Button kind="ghost" size="sm" icon={I.Shuffle} onClick={cycleWithin}>shuffle within</Button>
-        </div>
-        <button onClick={() => setHelpOpen(o => !o)} className="text-[11px] font-mono text-ink-400 hover:text-ink-700 underline-offset-2 hover:underline">
-          spotify \u00b7 how this works
-        </button>
+      <div className="mt-3 flex items-center gap-2">
+        <Button kind="primary" size="sm" icon={I.Sparkle} onClick={surprise}>Pick a song for us</Button>
+        <Button kind="ghost" size="sm" icon={I.Shuffle} onClick={cycleWithin}>shuffle within</Button>
       </div>
-
-      {helpOpen && (
-        <div className="mt-3 rounded-xl bg-cream-200/70 ring-1 ring-ink-900/[0.05] p-3.5 text-[12.5px] text-ink-700 leading-relaxed fade-up">
-          <div className="font-medium text-ink-900 mb-1">Two questions, answered:</div>
-          <ul className="space-y-1.5 list-disc pl-4">
-            <li><span className="font-medium">No login needed for previews</span> \u2014 the player shows 30s of every track right now, no Spotify account required.</li>
-            <li><span className="font-medium">For full tracks</span>, log into Spotify in another tab on the same browser. The embed picks up your session automatically.</li>
-            <li><span className="font-medium">Anjali on her own device</span>: she just logs into her own Spotify on her side. Same iframe, different session \u2014 it works per-person, not per-couple.</li>
-            <li>The login button inside the embed is Spotify\u2019s, not ours; we can\u2019t wire that up.</li>
-          </ul>
-        </div>
-      )}
 
       <EditLibraryModal open={editing} onClose={() => setEditing(false)} />
     </Surface>
